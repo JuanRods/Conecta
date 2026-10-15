@@ -85,13 +85,25 @@
 
 ## Fase 5 — Perfil Empresa
 
-- [ ] 5.1 Modelar `Company` com status de verificação. _(E1)_
-- [ ] 5.2 Formulário de perfil da empresa (recursos de acessibilidade oferecidos). _(E1)_
-- [ ] 5.3 CRUD de vagas com envio automático à moderação (status PENDING). _(E2, M1)_
-- [ ] 5.4 Assistente de descrição inclusiva (dicas/verificação de linguagem). _(E2)_
-- [ ] 5.5 Gestão de candidaturas por vaga, com proteção de dados sensíveis. _(E3, NF2)_
-- [ ] 5.6 Atualização de status com notificação ao candidato. _(E3)_
-- [ ] 5.7 Tour guiado de publicação de vaga. _(A5)_
+- [x] 5.1 Modelar `Company` com status de verificação. _(E1)_
+- [x] 5.2 Formulário de perfil da empresa (recursos de acessibilidade oferecidos). _(E1)_
+- [x] 5.3 CRUD de vagas com envio automático à moderação (status PENDING). _(E2, M1)_
+- [x] 5.4 Assistente de descrição inclusiva (dicas/verificação de linguagem). _(E2)_
+- [x] 5.5 Gestão de candidaturas por vaga, com proteção de dados sensíveis. _(E3, NF2)_
+- [x] 5.6 Atualização de status com notificação ao candidato. _(E3)_
+- [x] 5.7 Tour guiado de publicação de vaga. _(A5)_
+
+> **Fase 5 implementada.** Domínio e serviços em `src/company/`
+> (`companyService` com status de verificação — empresa nasce PENDING, E1.3;
+> `inclusiveLanguage` com verificação de linguagem e dicas, E2.2). O
+> `jobService` ganhou o CRUD da empresa (criar → PENDING; editar vaga aprovada
+> volta à moderação; pausar/encerrar/duplicar; remover). `applicationService`
+> ganhou a visão da empresa (candidaturas por vaga, atualização de status com
+> notificação ao candidato — E3.2), respeitando o consentimento de acomodações
+> (E3.3/NF2). Painel da empresa com rotas aninhadas em `src/pages/company/`:
+> visão geral, perfil, lista/gestão de vagas, formulário de vaga (com assistente
+> inclusivo e tour guiado — A5) e candidaturas por vaga. Testes em
+> `src/test/company.test.tsx`. `npm test` (37 testes) e `npm run build` passam.
 
 ## Fase 6 — Painel do Administrador (Moderação)
 

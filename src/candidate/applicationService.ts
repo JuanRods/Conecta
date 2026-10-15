@@ -1,5 +1,11 @@
 import type { AccessibilityFeature, Job } from "../jobs/types";
-import type { Application, Favorite, JobAlert } from "./types";
+import type {
+  Application,
+  ApplicationStatus,
+  Favorite,
+  JobAlert,
+  Notification,
+} from "./types";
 
 /**
  * Serviço de candidaturas, favoritos e alertas (Fase 4 — C2).
@@ -14,6 +20,7 @@ import type { Application, Favorite, JobAlert } from "./types";
 const APPLICATIONS_KEY = "conecta.candidate.applications";
 const FAVORITES_KEY = "conecta.candidate.favorites";
 const ALERTS_KEY = "conecta.candidate.alerts";
+const NOTIFICATIONS_KEY = "conecta.candidate.notifications";
 
 function makeId(): string {
   return (
@@ -107,6 +114,48 @@ export const applicationService = {
     await simulateLatency(null);
   },
 
+  // --- Visão da EMPRESA (Fase 5 — E3) ---
+
+  /**
+   * Candidaturas de uma vaga. Só expõe `sharedAccommodations` quando o
+   * candidato consentiu em compartilhá-las no momento da candidatura (E3.3/NF2);
+   * caso contrário o campo já vem ausente da própria candidatura.
+   */
+  async listByJob(jobId: string): Promise<Application[]> {
+    const apps = load<Application>(APPLICATIONS_KEY)
+      .filter((a) => a.jobId === jobId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return simulateLatency(apps);
+  },
+
+  /**
+   * Atualiza o status de uma candidatura (E3.2) e registra uma notificação ao
+   * candidato (consumida por "Minhas candidaturas").
+   */
+  async updateStatus(
+    applicationId: string,
+    status: ApplicationStatus,
+  ): Promise<Application> {
+    const all = load<Application>(APPLICATIONS_KEY);
+    const idx = all.findIndex((a) => a.id === applicationId);
+    if (idx === -1) throw new Error("Candidatura não encontrada.");
+    all[idx] = { ...all[idx], status };
+    save(APPLICATIONS_KEY, all);
+    notify(all[idx].candidateId, {
+      type: "APPLICATION_STATUS",
+      applicationId,
+      jobTitle: all[idx].jobTitle,
+      status,
+      createdAt: new Date().toISOString(),
+    });
+    return simulateLatency(all[idx]);
+  },
+
+  /** Notificações do candidato (status de candidaturas) — E3.2. */
+  async listNotifications(candidateId: string): Promise<Notification[]> {
+    return simulateLatency(load<Notification>(notifKey(candidateId)));
+  },
+
   // --- Favoritos (C2.4) ---
 
   async listFavorites(candidateId: string): Promise<Favorite[]> {
@@ -174,10 +223,20 @@ export const applicationService = {
   },
 };
 
-// Favoritos e alertas são por candidato (chaves derivadas).
+// Favoritos, alertas e notificações são por candidato (chaves derivadas).
 function favKey(candidateId: string): string {
   return `${FAVORITES_KEY}.${candidateId}`;
 }
 function alertKey(candidateId: string): string {
   return `${ALERTS_KEY}.${candidateId}`;
+}
+function notifKey(candidateId: string): string {
+  return `${NOTIFICATIONS_KEY}.${candidateId}`;
+}
+
+function notify(candidateId: string, notification: Notification) {
+  const key = notifKey(candidateId);
+  const all = load<Notification>(key);
+  all.unshift(notification);
+  save(key, all);
 }

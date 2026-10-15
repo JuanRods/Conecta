@@ -9,6 +9,12 @@ import { CandidateOverview } from "./pages/candidate/CandidateOverview";
 import { ProfilePage } from "./pages/candidate/ProfilePage";
 import { ApplicationsPage } from "./pages/candidate/ApplicationsPage";
 import { FavoritesPage } from "./pages/candidate/FavoritesPage";
+import { CompanyDashboard } from "./pages/company/CompanyDashboard";
+import { CompanyOverview } from "./pages/company/CompanyOverview";
+import { CompanyProfilePage } from "./pages/company/CompanyProfilePage";
+import { CompanyJobsPage } from "./pages/company/CompanyJobsPage";
+import { JobFormPage } from "./pages/company/JobFormPage";
+import { JobApplicationsPage } from "./pages/company/JobApplicationsPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
@@ -46,9 +52,17 @@ const router = createBrowserRouter([
         path: "empresa",
         element: (
           <RequireAuth roles={["COMPANY"]}>
-            <DashboardPage />
+            <CompanyDashboard />
           </RequireAuth>
         ),
+        children: [
+          { index: true, element: <CompanyOverview /> },
+          { path: "perfil", element: <CompanyProfilePage /> },
+          { path: "vagas", element: <CompanyJobsPage /> },
+          { path: "vagas/nova", element: <JobFormPage /> },
+          { path: "vagas/:id/editar", element: <JobFormPage /> },
+          { path: "vagas/:id/candidaturas", element: <JobApplicationsPage /> },
+        ],
       },
       {
         path: "admin",
