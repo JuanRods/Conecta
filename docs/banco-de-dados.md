@@ -27,18 +27,40 @@ Sem Docker (instala o PostgreSQL 15 em um prefixo gravável):
 ./scripts/postgres.sh status
 ```
 
-### 2. Schema + seed
+### 2. Credenciais do banco (`server/.env`)
+
+Copie o exemplo e preencha com os dados da sua instância:
+
+```bash
+cp server/.env.example server/.env
+```
+
+```ini
+# server/.env  (ignorado pelo Git — nunca comite senhas reais)
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=postgres
+PGUSER=postgres
+PGPASSWORD=sua-senha
+```
+
+> Prefira as variáveis separadas quando a senha tiver caracteres especiais
+> (ex.: `@`): a aplicação faz o *percent-encoding* automaticamente. Se preferir,
+> use `DATABASE_URL` (tem precedência) — mas aí a senha precisa ser codificada
+> na própria URL (`@` → `%40`).
+
+### 3. Schema + seed
 
 ```bash
 npm run api:install   # dependências da API
 npm run db:reset      # recria o schema e injeta o seed
 ```
 
-### 3. API e frontend
+### 4. API e frontend
 
 ```bash
 npm run api           # http://localhost:3001
-cp .env.example .env.local   # define VITE_API_URL
+cp .env.example .env.local   # define VITE_API_URL (frontend -> API)
 npm run dev           # http://localhost:5173
 ```
 
