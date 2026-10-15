@@ -7,6 +7,7 @@ import {
   type UserStatus,
 } from "./types";
 import { isStrongPassword } from "./passwordPolicy";
+import { api, apiEnabled, ApiError } from "../api/client";
 
 /**
  * Serviço de autenticação.
@@ -87,6 +88,19 @@ function ensureSeed() {
 
 export const authService = {
   async register(input: RegisterInput): Promise<Session> {
+    if (apiEnabled()) {
+      if (!isStrongPassword(input.password)) {
+        throw new AuthError(
+          "WEAK_PASSWORD",
+          "A senha não atende aos requisitos de segurança.",
+        );
+      }
+      const session = await apiCall<Session>(() =>
+        api.post<Session>("/auth/register", input),
+      );
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      return session;
+    }
     ensureSeed();
     const email = input.email.trim().toLowerCase();
 
@@ -128,6 +142,13 @@ export const authService = {
   },
 
   async login(input: LoginInput): Promise<Session> {
+    if (apiEnabled()) {
+      const session = await apiCall<Session>(() =>
+        api.post<Session>("/auth/login", input),
+      );
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      return session;
+    }
     ensureSeed();
     const email = input.email.trim().toLowerCase();
     const users = loadUsers();
@@ -173,6 +194,7 @@ export const authService = {
 
   /** Lista todas as contas (sem o hash de senha). */
   async listUsers(): Promise<User[]> {
+    if (apiEnabled()) return api.get<User[]>("/admin/users");
     ensureSeed();
     return simulateLatency(loadUsers().map(stripPassword));
   },
@@ -182,6 +204,9 @@ export const authService = {
    * bloqueado em `login()`.
    */
   async setUserStatus(userId: string, status: UserStatus): Promise<User> {
+    if (apiEnabled()) {
+      return api.patch<User>(`/admin/users/${userId}/status`, { status });
+    }
     const users = loadUsers();
     const idx = users.findIndex((u) => u.id === userId);
     if (idx === -1) throw new AuthError("NOT_FOUND", "Conta não encontrada.");
@@ -195,9 +220,38 @@ export const authService = {
    * A remoção dos dados associados é orquestrada pelo privacyService.
    */
   async deleteUser(userId: string): Promise<void> {
+    if (apiEnabled()) {
+      await api.del(`/privacy/${userId}`);
+      const active = this.getSession();
+      if (active?.user.id === userId) this.logout();
+      return;
+    }
     saveUsers(loadUsers().filter((u) => u.id !== userId));
     const current = this.getSession();
     if (current?.user.id === userId) this.logout();
     await simulateLatency(null);
   },
 };
+
+/**
+ * Traduz erros da API para `AuthError`, preservando os códigos que a interface
+ * já trata (credenciais inválidas, conta suspensa, e-mail em uso).
+ */
+async function apiCall<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err instanceof ApiError) {
+      const code =
+        err.code === "INVALID_CREDENTIALS" ||
+        err.code === "ACCOUNT_SUSPENDED" ||
+        err.code === "EMAIL_IN_USE" ||
+        err.code === "WEAK_PASSWORD" ||
+        err.code === "NOT_FOUND"
+          ? err.code
+          : "INVALID_CREDENTIALS";
+      throw new AuthError(code, err.message);
+    }
+    throw err;
+  }
+}

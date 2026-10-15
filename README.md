@@ -23,8 +23,12 @@ A especificação completa está em [`.kiro/specs/conecta-inclusao`](.kiro/specs
 
 - 🌗 **Tema claro/escuro** com persistência e respeito a `prefers-color-scheme`.
 - 🔎 **Alto contraste** e **tamanho de fonte** ajustável (até 200%).
-- 🎬 **Redução de movimento** (`prefers-reduced-motion` + opção manual).
-- 🧭 **Navegação guiada** passo a passo, operável por teclado e leitor de tela.
+- 🎬 **Redução de movimento** automática, respeitando `prefers-reduced-motion`
+  do sistema (sem alternância manual na interface).
+- 🧭 **Navegação guiada** em **todas as telas**, por um ícone flutuante fixo
+  (como o VLibras). Ao entrar em uma tela, a plataforma oferece o guia com as
+  opções *Iniciar*, *Cancelar* e **"Não exibir novamente"** — sem bloquear a
+  leitura. O guia continua sempre disponível no ícone.
 - ⌨️ **Navegação por teclado** completa + link "Pular para o conteúdo".
 - 📢 Região **aria-live** para anúncios dinâmicos.
 - 🧩 Componentes acessíveis base (botão, modal com focus trap).
@@ -41,6 +45,21 @@ npm test           # testes unitários + acessibilidade (axe)
 npx playwright install --with-deps   # 1ª vez
 npm run test:e2e
 ```
+
+### Com banco de dados (PostgreSQL)
+
+```bash
+./scripts/postgres.sh install && ./scripts/postgres.sh init   # sem Docker
+npm run api:install        # dependências da API
+npm run db:reset           # schema + dados de demonstração
+npm run api                # API em http://localhost:3001
+cp .env.example .env.local # aponta o frontend para a API
+npm run dev
+npm run test:api           # testes de integração contra o Postgres real
+```
+
+Detalhes do modelo de dados, do seed e das contas de teste em
+[`docs/banco-de-dados.md`](docs/banco-de-dados.md).
 
 ## Busca pública de vagas (Fase 3)
 
@@ -129,18 +148,26 @@ arquivo correspondente.
 ## Estrutura
 
 ```
+server/              # API REST (Express + PostgreSQL)
+├─ src/schema.sql    # schema do banco
+├─ src/seed.sql      # dados de demonstração
+├─ src/app.ts        # endpoints
+└─ src/api.test.ts   # testes de integração (Postgres real)
+
 src/
-├─ accessibility/   # contexto de preferências, tour guiado, aria-live, focus trap
-├─ auth/            # contexto de autenticação, RBAC, serviço mock (Fase 2)
-├─ jobs/            # domínio de vagas, busca pública + CRUD + moderação
-├─ candidate/       # perfil, candidaturas, favoritos/alertas e denúncias (Fase 4)
-├─ company/         # perfil da empresa, verificação e linguagem inclusiva (Fase 5)
-├─ admin/           # serviços de moderação, auditoria e métricas (Fase 6)
-├─ components/      # Layout, Button, Field, Modal, Logo, controles de a11y
-├─ pages/           # Home, autenticação, vagas e painéis (candidato/empresa/admin)
+├─ api/              # cliente HTTP + chave da integração (apiEnabled)
+├─ accessibility/    # preferências, tour guiado + ícone global, aria-live, VLibras
+├─ auth/             # contexto de autenticação e RBAC
+├─ jobs/             # domínio de vagas, busca pública + CRUD + moderação
+├─ candidate/        # perfil, candidaturas, favoritos/alertas e denúncias
+├─ company/          # perfil da empresa, verificação e linguagem inclusiva
+├─ admin/            # serviços de moderação, auditoria e métricas
+├─ privacy/          # fluxos LGPD (consentimento, exportação, exclusão)
+├─ components/       # Layout, Button, Field, Modal, Avatar, controles de a11y
+├─ pages/            # Home, autenticação, vagas e painéis
 ├─ styles/
-│  ├─ tokens.css    # variáveis de design (cores, espaçamento, temas)
-│  ├─ global.css    # reset, base e importações
-│  └─ elements/     # 🎨 um arquivo CSS por elemento reutilizável
-└─ test/            # testes (a11y, auth, vagas, candidato, empresa, admin)
+│  ├─ tokens.css     # variáveis de design (cores, espaçamento, temas)
+│  ├─ global.css     # reset, base e importações
+│  └─ elements/      # 🎨 um arquivo CSS por elemento reutilizável
+└─ test/             # testes (a11y, auth, vagas, candidato, empresa, admin, LGPD)
 ```

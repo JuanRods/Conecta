@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "../components/Button";
 import { Field } from "../components/Field";
@@ -15,7 +15,6 @@ import {
   type Modality,
 } from "../jobs/types";
 import { useAnnouncer } from "../accessibility/Announcer";
-import { useGuidedTour } from "../accessibility/GuidedTour";
 import "./JobsPage.css";
 
 const MODALITIES = Object.keys(MODALITY_LABELS) as Modality[];
@@ -56,7 +55,6 @@ function paramsFromFilters(filters: JobFilters): URLSearchParams {
 export function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { announce } = useAnnouncer();
-  const { startTour, isTourCompleted } = useGuidedTour();
 
   const [filters, setFilters] = useState<JobFilters>(() =>
     filtersFromParams(searchParams),
@@ -100,45 +98,6 @@ export function JobsPage() {
     };
   }, [searchParams, announce]);
 
-  const runTour = useCallback(() => {
-    startTour({
-      id: "busca-vagas",
-      steps: [
-        {
-          target: "#form-busca",
-          title: "Pesquise por palavra-chave e local",
-          description:
-            "Digite um cargo, tecnologia ou cidade. A busca ignora acentos e maiúsculas.",
-        },
-        {
-          target: "#filtros-vaga",
-          title: "Refine com os filtros",
-          description:
-            "Escolha modalidade, nível, área e os recursos de acessibilidade que você precisa.",
-        },
-        {
-          target: "#filtro-recursos",
-          title: "Recursos de acessibilidade",
-          description:
-            "Marque os recursos necessários. Mostramos apenas vagas que oferecem todos os selecionados.",
-        },
-        {
-          target: `#${CSS.escape(resultsHeadingId)}`,
-          title: "Resultados anunciados",
-          description:
-            "A quantidade de resultados é anunciada por leitores de tela. Abra uma vaga para ver os detalhes e os selos de acessibilidade.",
-        },
-      ],
-    });
-  }, [startTour, resultsHeadingId]);
-
-  // Oferece o tour automaticamente na primeira visita.
-  useEffect(() => {
-    if (!isTourCompleted("busca-vagas")) {
-      // Não inicia sozinho para não surpreender; apenas disponibiliza o botão.
-    }
-  }, [isTourCompleted]);
-
   function updateFilter<K extends keyof JobFilters>(
     key: K,
     value: JobFilters[K],
@@ -176,9 +135,6 @@ export function JobsPage() {
           Você não precisa de conta para pesquisar — o login é solicitado apenas
           ao se candidatar.
         </p>
-        <Button variant="secondary" onClick={runTour}>
-          Como buscar vagas (navegação guiada)
-        </Button>
       </header>
 
       <form

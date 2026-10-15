@@ -36,14 +36,6 @@ body {
   }
 }
 
-[data-reduced-motion="true"] *,
-[data-reduced-motion="true"] *::before,
-[data-reduced-motion="true"] *::after {
-  animation-duration: 0.001ms !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
-}
-
 /* Foco visível reforçado em TODOS os elementos interativos (A1, A2) */
 :focus-visible {
   outline: var(--focus-ring);

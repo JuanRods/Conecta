@@ -34,28 +34,41 @@ interface Tour {
 interface GuidedTourContextValue {
   startTour: (tour: Tour) => void;
   isTourCompleted: (id: string) => boolean;
+  /** Marca um tour para nunca mais ser oferecido automaticamente. */
+  suppressTour: (id: string) => void;
+  /** Indica se o usuário pediu para não exibir novamente este tour. */
+  isTourSuppressed: (id: string) => boolean;
 }
 
 const COMPLETED_KEY = "conecta.tours.completed";
+const SUPPRESSED_KEY = "conecta.tours.suppressed";
 
 const GuidedTourContext = createContext<GuidedTourContextValue | null>(null);
 
-function loadCompleted(): string[] {
+function loadList(key: string): string[] {
   try {
-    return JSON.parse(localStorage.getItem(COMPLETED_KEY) ?? "[]") as string[];
+    return JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
   } catch {
     return [];
   }
 }
 
-function markCompleted(id: string) {
+function addToList(key: string, id: string) {
   try {
-    const done = new Set(loadCompleted());
-    done.add(id);
-    localStorage.setItem(COMPLETED_KEY, JSON.stringify([...done]));
+    const set = new Set(loadList(key));
+    set.add(id);
+    localStorage.setItem(key, JSON.stringify([...set]));
   } catch {
     /* ignora */
   }
+}
+
+function loadCompleted(): string[] {
+  return loadList(COMPLETED_KEY);
+}
+
+function markCompleted(id: string) {
+  addToList(COMPLETED_KEY, id);
 }
 
 export function GuidedTourProvider({ children }: { children: ReactNode }) {
@@ -89,6 +102,16 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const suppressTour = useCallback(
+    (id: string) => addToList(SUPPRESSED_KEY, id),
+    [],
+  );
+
+  const isTourSuppressed = useCallback(
+    (id: string) => loadList(SUPPRESSED_KEY).includes(id),
+    [],
+  );
+
   const active = tour !== null;
   useFocusTrap(panelRef, active, close);
 
@@ -114,7 +137,7 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
 
   if (!active || !tour || !step) {
     return (
-      <GuidedTourContext.Provider value={{ startTour, isTourCompleted }}>
+      <GuidedTourContext.Provider value={{ startTour, isTourCompleted, suppressTour, isTourSuppressed }}>
         {children}
       </GuidedTourContext.Provider>
     );
@@ -124,7 +147,7 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
   const isFirst = index === 0;
 
   return (
-    <GuidedTourContext.Provider value={{ startTour, isTourCompleted }}>
+    <GuidedTourContext.Provider value={{ startTour, isTourCompleted, suppressTour, isTourSuppressed }}>
       {children}
       <div className="tour__backdrop" />
       <div

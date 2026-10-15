@@ -4,21 +4,23 @@ import "./AccessibilityControls.css";
 
 /**
  * Barra de controles de acessibilidade (A4, A6):
- * tema claro/escuro, alto contraste, tamanho de fonte e redução de movimento.
+ * tema claro/escuro, alto contraste e tamanho de fonte.
  * Cada ação é anunciada por leitor de tela.
+ *
+ * NOTA: não há alternância manual de "reduzir animações" — a redução de
+ * movimento é aplicada automaticamente quando o sistema operacional sinaliza
+ * `prefers-reduced-motion: reduce` (A6), sem exigir ação do usuário.
  */
 export function AccessibilityControls() {
   const {
     theme,
     contrast,
     fontScale,
-    reducedMotion,
     toggleTheme,
     toggleContrast,
     increaseFont,
     decreaseFont,
     resetFont,
-    toggleReducedMotion,
   } = usePreferences();
   const { announce } = useAnnouncer();
 
@@ -95,19 +97,6 @@ export function AccessibilityControls() {
           A+
         </button>
       </div>
-
-      <button
-        type="button"
-        className="a11y-controls__btn"
-        onClick={() => {
-          toggleReducedMotion();
-          announce(`Animações ${reducedMotion ? "ativadas" : "reduzidas"}`);
-        }}
-        aria-pressed={reducedMotion}
-      >
-        <span aria-hidden="true">⏯</span>
-        <span>Reduzir animações</span>
-      </button>
     </div>
   );
 }

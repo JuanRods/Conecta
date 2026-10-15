@@ -13,17 +13,16 @@ test.describe("Jornada do candidato", () => {
     // --- Cadastro ---
     await page.goto("/cadastro");
 
-    // O cadastro abre uma navegação guiada na primeira visita; fecha com Esc.
-    const tour = page.getByRole("dialog");
-    if (await tour.isVisible().catch(() => false)) {
-      await page.keyboard.press("Escape");
-      await expect(tour).toBeHidden();
-    }
+    // O convite da navegação guiada não é modal (não bloqueia a tela), mas
+    // fechamos com Esc para manter o cenário limpo.
+    await page.keyboard.press("Escape");
 
     await page.getByLabel(/nome completo/i).fill("Ana E2E");
     await page.getByLabel(/e-mail/i).fill(email);
     await page.getByLabel(/^senha/i).fill("Senha@123");
-    await page.getByRole("button", { name: /criar conta/i }).click();
+    // Nome exato: evita casar com o ícone "Iniciar navegação guiada da tela
+    // Criar conta".
+    await page.getByRole("button", { name: /^criar conta$/i }).click();
 
     // Após o cadastro, o candidato cai no painel.
     await expect(

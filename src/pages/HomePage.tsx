@@ -1,46 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useGuidedTour } from "../accessibility/GuidedTour";
 import { Button } from "../components/Button";
 import "./HomePage.css";
 
 /**
- * Página inicial (base). Demonstra a navegação guiada e serve de ponto de
- * partida para a busca pública de vagas (a ser implementada na Fase 3).
+ * Página inicial pública. A navegação guiada desta tela está registrada em
+ * `accessibility/tours.ts` e é oferecida/reaberta pelo ícone global “Guia”.
  */
 export function HomePage() {
-  const { startTour } = useGuidedTour();
   const navigate = useNavigate();
-
-  function startWelcomeTour() {
-    startTour({
-      id: "boas-vindas",
-      steps: [
-        {
-          title: "Bem-vindo(a) ao Conecta Inclusão",
-          description:
-            "Esta navegação guiada mostra os principais recursos. Use os botões Próximo e Anterior, ou pressione Esc para sair.",
-        },
-        {
-          target: ".a11y-controls",
-          title: "Personalize sua experiência",
-          description:
-            "Aqui você alterna entre tema claro e escuro, ativa alto contraste, muda o tamanho da fonte e reduz animações.",
-        },
-        {
-          target: "#busca-vagas",
-          title: "Encontre vagas inclusivas",
-          description:
-            "Use esta área para buscar vagas por palavra-chave, local e recursos de acessibilidade oferecidos.",
-        },
-        {
-          target: "#cta-empresas",
-          title: "É uma empresa?",
-          description:
-            "Empresas podem cadastrar vagas inclusivas e encontrar talentos. Clique aqui para começar.",
-        },
-      ],
-    });
-  }
 
   return (
     <>
@@ -55,9 +22,6 @@ export function HomePage() {
         <div className="hero__actions">
           <Button variant="primary" onClick={() => navigate("/vagas")}>
             Buscar vagas
-          </Button>
-          <Button variant="secondary" onClick={startWelcomeTour}>
-            Iniciar navegação guiada
           </Button>
         </div>
       </section>
