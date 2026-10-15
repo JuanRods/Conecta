@@ -1,11 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/Button";
+import { Modal } from "../components/Modal";
 import { AccessibilityBadges } from "../jobs/AccessibilityBadges";
 import { jobService } from "../jobs/jobService";
-import { LEVEL_LABELS, MODALITY_LABELS, type Job } from "../jobs/types";
+import {
+  FEATURE_LABELS,
+  LEVEL_LABELS,
+  MODALITY_LABELS,
+  type AccessibilityFeature,
+  type Job,
+} from "../jobs/types";
 import { useAuth } from "../auth/AuthContext";
 import { useAnnouncer } from "../accessibility/Announcer";
+import { applicationService } from "../candidate/applicationService";
+import { profileService } from "../candidate/profileService";
+import { ReportDialog } from "../candidate/ReportDialog";
 import "./JobDetailPage.css";
 
 type LoadState =
@@ -14,17 +24,32 @@ type LoadState =
   | { status: "not-found" };
 
 /**
- * Detalhe da vaga (Fase 3 — P2.3, design §5.4).
- * - Mostra descrição completa e selos de acessibilidade.
- * - Login é exigido APENAS ao se candidatar (P2.3): visitantes veem tudo e são
- *   levados ao login (com retorno) só ao clicar em "Candidatar-se".
+ * Detalhe da vaga (Fases 3 e 4).
+ * - Mostra descrição completa e selos de acessibilidade (Fase 3, P2.3).
+ * - Candidatura real para CANDIDATE, com consentimento de compartilhamento de
+ *   acomodações (Fase 4 — C2.2 / NF2).
+ * - Favoritar vaga (C2.4) e denunciar conteúdo (C3).
  */
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [state, setState] = useState<LoadState>({ status: "loading" });
-  const { isAuthenticated, hasRole } = useAuth();
+  const { isAuthenticated, hasRole, user } = useAuth();
   const { announce } = useAnnouncer();
   const navigate = useNavigate();
+
+  const isCandidate = isAuthenticated && hasRole("CANDIDATE");
+
+  const [applied, setApplied] = useState(false);
+  const [favorite, setFavorite] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  // Acomodações do perfil + consentimento para compartilhar.
+  const [myAccommodations, setMyAccommodations] = useState<
+    AccessibilityFeature[]
+  >([]);
+  const [shareConsent, setShareConsent] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -48,22 +73,88 @@ export function JobDetailPage() {
     };
   }, [id, announce]);
 
-  function handleApply(job: Job) {
+  // Estado específico do candidato: já aplicou? é favorita? quais acomodações?
+  useEffect(() => {
+    if (!isCandidate || !user || !id) return;
+    let active = true;
+    Promise.all([
+      applicationService.hasApplied(user.id, id),
+      applicationService.isFavorite(user.id, id),
+      profileService.get(user.id),
+    ]).then(([hasApplied, isFav, profile]) => {
+      if (!active) return;
+      setApplied(hasApplied);
+      setFavorite(isFav);
+      setMyAccommodations(profile.sensitive.accommodations);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isCandidate, user, id]);
+
+  function openApply(job: Job) {
     // P2.3: login exigido apenas no momento da candidatura.
-    if (isAuthenticated && hasRole("CANDIDATE")) {
-      // A candidatura em si é entregue na Fase 4; por ora, levamos ao painel.
-      announce("Para concluir, finalize sua candidatura no painel.");
-      navigate("/painel");
+    if (!isAuthenticated) {
+      navigate("/entrar", { state: { from: `/vagas/${job.id}` } });
       return;
     }
-    if (isAuthenticated && !hasRole("CANDIDATE")) {
+    if (!isCandidate) {
       announce(
         "Apenas contas de candidato podem se candidatar a vagas.",
         "assertive",
       );
       return;
     }
-    navigate("/entrar", { state: { from: `/vagas/${job.id}` } });
+    setShareConsent(false);
+    setApplyOpen(true);
+  }
+
+  async function confirmApply(job: Job) {
+    if (!user) return;
+    setApplying(true);
+    try {
+      const shared =
+        shareConsent && myAccommodations.length > 0
+          ? myAccommodations
+          : undefined;
+      await applicationService.apply(
+        user.id,
+        { id: job.id, title: job.title, companyName: job.companyName },
+        shared,
+      );
+      setApplied(true);
+      setApplyOpen(false);
+      announce(
+        `Candidatura enviada para ${job.title}. Acompanhe o status em “Minhas candidaturas”.`,
+      );
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  async function toggleFavorite(job: Job) {
+    if (!isAuthenticated) {
+      navigate("/entrar", { state: { from: `/vagas/${job.id}` } });
+      return;
+    }
+    if (!isCandidate || !user) {
+      announce(
+        "Apenas contas de candidato podem salvar vagas.",
+        "assertive",
+      );
+      return;
+    }
+    const nowFav = await applicationService.toggleFavorite(user.id, {
+      id: job.id,
+      title: job.title,
+      companyName: job.companyName,
+    });
+    setFavorite(nowFav);
+    announce(
+      nowFav
+        ? `${job.title} salva nos favoritos.`
+        : `${job.title} removida dos favoritos.`,
+    );
   }
 
   if (state.status === "loading") {
@@ -89,10 +180,6 @@ export function JobDetailPage() {
   }
 
   const { job } = state;
-  const onlyCandidateHint =
-    isAuthenticated && !hasRole("CANDIDATE")
-      ? "Apenas contas de candidato podem se candidatar."
-      : undefined;
 
   return (
     <article className="job-detail" aria-labelledby="job-detail-title">
@@ -143,21 +230,137 @@ export function JobDetailPage() {
       </section>
 
       <div className="job-detail__cta">
-        <Button variant="primary" onClick={() => handleApply(job)}>
-          Candidatar-se a esta vaga
-        </Button>
+        {applied ? (
+          <p className="job-detail__applied" role="status">
+            ✓ Você já se candidatou a esta vaga.{" "}
+            <Link to="/painel/candidaturas">Ver minhas candidaturas</Link>
+          </p>
+        ) : (
+          <Button variant="primary" onClick={() => openApply(job)}>
+            Candidatar-se a esta vaga
+          </Button>
+        )}
+
+        <div className="job-detail__secondary">
+          <Button
+            variant="secondary"
+            onClick={() => toggleFavorite(job)}
+            aria-pressed={favorite}
+          >
+            {favorite ? "★ Salva nos favoritos" : "☆ Salvar vaga"}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (!isAuthenticated) {
+                navigate("/entrar", { state: { from: `/vagas/${job.id}` } });
+                return;
+              }
+              setReportOpen(true);
+            }}
+          >
+            Denunciar vaga
+          </Button>
+        </div>
+
         {!isAuthenticated && (
           <p className="job-detail__muted">
-            Você poderá pesquisar sem conta; o login é solicitado apenas para se
-            candidatar.
+            Você pode pesquisar sem conta; o login é solicitado apenas para se
+            candidatar, favoritar ou denunciar.
           </p>
         )}
-        {onlyCandidateHint && (
+        {isAuthenticated && !isCandidate && (
           <p className="job-detail__muted" role="note">
-            {onlyCandidateHint}
+            Apenas contas de candidato podem se candidatar, favoritar ou
+            denunciar vagas.
           </p>
         )}
       </div>
+
+      {/* --- Diálogo de candidatura com consentimento (C2.2 / NF2) --- */}
+      <Modal
+        isOpen={applyOpen}
+        onClose={() => setApplyOpen(false)}
+        title={`Candidatar-se: ${job.title}`}
+      >
+        <form
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            confirmApply(job);
+          }}
+        >
+          <p>
+            Confirme sua candidatura para <strong>{job.title}</strong> na empresa{" "}
+            {job.companyName}.
+          </p>
+
+          {myAccommodations.length > 0 ? (
+            <fieldset className="field" style={{ border: 0, padding: 0 }}>
+              <legend className="field__label">
+                Compartilhar acomodações com a empresa?
+              </legend>
+              <p className="field__hint">
+                Suas acomodações são sigilosas. Você pode compartilhá-las com
+                esta empresa para facilitar o processo. Isso é opcional.
+              </p>
+              <label
+                style={{
+                  display: "flex",
+                  gap: "var(--space-2)",
+                  alignItems: "flex-start",
+                  minHeight: "var(--touch-target)",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={shareConsent}
+                  onChange={(e) => setShareConsent(e.target.checked)}
+                />
+                <span>
+                  Autorizo compartilhar:{" "}
+                  {myAccommodations.map((f) => FEATURE_LABELS[f]).join(", ")}.
+                </span>
+              </label>
+            </fieldset>
+          ) : (
+            <p className="job-detail__muted">
+              Você pode cadastrar acomodações no seu perfil para compartilhá-las
+              em futuras candidaturas.
+            </p>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--space-3)",
+              marginTop: "var(--space-4)",
+            }}
+          >
+            <Button type="submit" disabled={applying}>
+              {applying ? "Enviando…" : "Confirmar candidatura"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setApplyOpen(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* --- Diálogo de denúncia (C3) --- */}
+      {user && (
+        <ReportDialog
+          isOpen={reportOpen}
+          onClose={() => setReportOpen(false)}
+          reporterId={user.id}
+          targetType="JOB"
+          targetId={job.id}
+          targetLabel={job.title}
+        />
+      )}
     </article>
   );
 }

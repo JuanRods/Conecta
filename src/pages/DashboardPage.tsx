@@ -7,7 +7,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const NEXT_PHASE: Record<string, string> = {
-  CANDIDATE: "Fase 4 — Perfil, busca e candidaturas do candidato.",
+  CANDIDATE: "Perfil, candidaturas e favoritos (Fase 4).",
   COMPANY: "Fase 5 — Perfil da empresa e gestão de vagas.",
   ADMIN: "Fase 6 — Fila de moderação, denúncias e métricas.",
 };

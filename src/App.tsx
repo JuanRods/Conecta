@@ -4,6 +4,11 @@ import { HomePage } from "./pages/HomePage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
+import { CandidateDashboard } from "./pages/candidate/CandidateDashboard";
+import { CandidateOverview } from "./pages/candidate/CandidateOverview";
+import { ProfilePage } from "./pages/candidate/ProfilePage";
+import { ApplicationsPage } from "./pages/candidate/ApplicationsPage";
+import { FavoritesPage } from "./pages/candidate/FavoritesPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
@@ -27,9 +32,15 @@ const router = createBrowserRouter([
         path: "painel",
         element: (
           <RequireAuth roles={["CANDIDATE"]}>
-            <DashboardPage />
+            <CandidateDashboard />
           </RequireAuth>
         ),
+        children: [
+          { index: true, element: <CandidateOverview /> },
+          { path: "perfil", element: <ProfilePage /> },
+          { path: "candidaturas", element: <ApplicationsPage /> },
+          { path: "favoritos", element: <FavoritesPage /> },
+        ],
       },
       {
         path: "empresa",
