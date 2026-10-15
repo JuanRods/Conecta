@@ -1,26 +1,20 @@
 import { authService } from "../auth/authService";
-import { profileService } from "../candidate/profileService";
-import { applicationService } from "../candidate/applicationService";
-import { reportService } from "../candidate/reportService";
+import { apiRequest } from "../api/client";
 import type { User } from "../auth/types";
 
 /**
- * Serviço de privacidade / LGPD (Fase 7 — NF2).
+ * Serviço de privacidade / LGPD (Fase 7 — NF2) — conversa com o backend real
+ * (/privacy/consent, /privacy/export, /privacy/account).
  *
- * Centraliza os direitos do titular dos dados:
- *  - Consentimento de tratamento de dados (registro + versão).
- *  - Portabilidade: exportação de TODOS os dados do usuário em JSON.
- *  - Direito à exclusão: remoção da conta e de todos os dados associados.
- *
- * NOTA DE AMBIENTE: MOCK em localStorage. No backend, a exclusão deve ser
- * propagada a todos os armazenamentos (incluindo backups, conforme política) e
- * registrada em auditoria de acesso a dados sensíveis (NF8).
+ * `getConsent`/`hasConsented` permanecem SÍNCRONOS (a UI os chama assim) usando
+ * um cache local do consentimento, mantido em sincronia pelas chamadas
+ * assíncronas `refreshConsent`/`recordConsent`/`revokeConsent`.
  */
-
-const CONSENT_KEY = "conecta.privacy.consent";
 
 /** Versão atual do aviso de privacidade/consentimento. */
 export const CONSENT_VERSION = "2026-10-15";
+
+const CONSENT_CACHE_KEY = "conecta.privacy.consentCache";
 
 export interface ConsentRecord {
   userId: string;
@@ -28,22 +22,28 @@ export interface ConsentRecord {
   acceptedAt: string;
 }
 
-function loadConsents(): ConsentRecord[] {
+interface ConsentState {
+  version: string;
+  consented: boolean;
+  consent: ConsentRecord | null;
+}
+
+function readCache(): Record<string, ConsentRecord | null> {
   try {
-    return JSON.parse(
-      localStorage.getItem(CONSENT_KEY) ?? "[]",
-    ) as ConsentRecord[];
+    return JSON.parse(localStorage.getItem(CONSENT_CACHE_KEY) ?? "{}");
   } catch {
-    return [];
+    return {};
   }
 }
 
-function saveConsents(list: ConsentRecord[]) {
-  localStorage.setItem(CONSENT_KEY, JSON.stringify(list));
-}
-
-function simulateLatency<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), 200));
+function writeCache(userId: string, record: ConsentRecord | null) {
+  try {
+    const cache = readCache();
+    cache[userId] = record;
+    localStorage.setItem(CONSENT_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* ignora */
+  }
 }
 
 export interface DataExport {
@@ -61,74 +61,53 @@ export interface DataExport {
 export const privacyService = {
   // --- Consentimento ---
 
-  /** Verifica se o usuário aceitou a versão atual do consentimento. */
+  /** Leitura SÍNCRONA do cache local (preenchido por refreshConsent). */
   hasConsented(userId: string): boolean {
-    return loadConsents().some(
-      (c) => c.userId === userId && c.version === CONSENT_VERSION,
-    );
+    const record = readCache()[userId];
+    return !!record && record.version === CONSENT_VERSION;
   },
 
+  /** Leitura SÍNCRONA do cache local. */
   getConsent(userId: string): ConsentRecord | null {
-    return (
-      loadConsents().find(
-        (c) => c.userId === userId && c.version === CONSENT_VERSION,
-      ) ?? null
-    );
+    return readCache()[userId] ?? null;
+  },
+
+  /** Busca o estado de consentimento no backend e atualiza o cache local. */
+  async refreshConsent(userId: string): Promise<ConsentRecord | null> {
+    try {
+      const state = await apiRequest<ConsentState>("/privacy/consent");
+      writeCache(userId, state.consent);
+      return state.consent;
+    } catch {
+      return this.getConsent(userId);
+    }
   },
 
   async recordConsent(userId: string): Promise<ConsentRecord> {
-    const record: ConsentRecord = {
-      userId,
-      version: CONSENT_VERSION,
-      acceptedAt: new Date().toISOString(),
-    };
-    const others = loadConsents().filter((c) => c.userId !== userId);
-    saveConsents([...others, record]);
-    return simulateLatency(record);
+    const record = await apiRequest<ConsentRecord>("/privacy/consent", {
+      method: "POST",
+    });
+    writeCache(userId, record);
+    return record;
   },
 
   async revokeConsent(userId: string): Promise<void> {
-    saveConsents(loadConsents().filter((c) => c.userId !== userId));
-    await simulateLatency(null);
+    await apiRequest<void>("/privacy/consent", { method: "DELETE" });
+    writeCache(userId, null);
   },
 
   // --- Portabilidade (exportação) ---
 
-  /** Reúne todos os dados do candidato para portabilidade (JSON). */
-  async exportCandidateData(user: User): Promise<DataExport> {
-    const [profile, applications, favorites, alerts, notifications, reports] =
-      await Promise.all([
-        profileService.get(user.id),
-        applicationService.listByCandidate(user.id),
-        applicationService.listFavorites(user.id),
-        applicationService.listAlerts(user.id),
-        applicationService.listNotifications(user.id),
-        reportService.listByReporter(user.id),
-      ]);
-    return simulateLatency({
-      exportedAt: new Date().toISOString(),
-      account: user,
-      consent: this.getConsent(user.id),
-      profile,
-      applications,
-      favorites,
-      alerts,
-      notifications,
-      reports,
-    });
+  async exportCandidateData(_user: User): Promise<DataExport> {
+    return apiRequest<DataExport>("/privacy/export");
   },
 
   // --- Direito à exclusão ---
 
-  /**
-   * Exclui a conta e TODOS os dados do candidato. Encerra a sessão ao final.
-   */
   async deleteCandidateAccount(userId: string): Promise<void> {
-    await profileService.delete(userId);
-    await applicationService.purgeCandidate(userId);
-    await reportService.purgeByReporter(userId);
-    await this.revokeConsent(userId);
-    await authService.deleteUser(userId);
-    await simulateLatency(null);
+    await apiRequest<void>("/privacy/account", { method: "DELETE" });
+    writeCache(userId, null);
+    // Encerra a sessão local após a exclusão no servidor.
+    authService.logout();
   },
 };

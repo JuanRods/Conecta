@@ -39,12 +39,24 @@ function renderWithProviders(ui: ReactNode, initialPath = "/") {
   );
 }
 
-async function seedCompany(): Promise<string> {
+let seq = 0;
+
+async function seedCompany(email = "rh@empresa.com"): Promise<string> {
   const session = await authService.register({
     name: "Recrutador",
-    email: "rh@empresa.com",
+    email,
     password: "Senha@123",
     accountType: "company",
+  });
+  return session.user.id;
+}
+
+async function seedCandidate(email: string): Promise<string> {
+  const session = await authService.register({
+    name: "Candidato",
+    email,
+    password: "Senha@123",
+    accountType: "candidate",
   });
   return session.user.id;
 }
@@ -61,8 +73,9 @@ describe("Serviço de perfil da empresa", () => {
   beforeEach(() => localStorage.clear());
 
   it("cadastra empresa como pendente de verificação (E1.3)", async () => {
+    const userId = await seedCompany(`comp-${seq++}@empresa.com`);
     const saved = await companyService.save({
-      userId: "c-1",
+      userId,
       name: "TechInclui",
       cnpj: "11.222.333/0001-81",
       sector: "Tecnologia",
@@ -73,7 +86,7 @@ describe("Serviço de perfil da empresa", () => {
       updatedAt: new Date().toISOString(),
     });
     expect(saved.verificationStatus).toBe("PENDING");
-    expect(await companyService.exists("c-1")).toBe(true);
+    expect(await companyService.exists(userId)).toBe(true);
   });
 });
 
@@ -93,10 +106,11 @@ describe("CRUD de vagas da empresa", () => {
   };
 
   it("cria vaga em PENDING e não aparece na busca pública (E2.3/M1)", async () => {
+    const companyId = await seedCompany(`crud-${seq++}@empresa.com`);
     const created = await jobService.create(base);
     expect(created.status).toBe("PENDING");
 
-    const owned = await jobService.listByCompany("c-9");
+    const owned = await jobService.listByCompany(companyId);
     expect(owned).toHaveLength(1);
 
     const publicResults = await jobService.search({ keyword: "Back-end" });
@@ -104,10 +118,18 @@ describe("CRUD de vagas da empresa", () => {
   });
 
   it("edição de vaga aprovada volta para a moderação", async () => {
+    const companyEmail = `crud-${seq++}@empresa.com`;
+    const companyId = await seedCompany(companyEmail);
     const created = await jobService.create(base);
-    // Simula aprovação pela moderação.
-    await jobService.setStatus("c-9", created.id, "APPROVED");
-    const edited = await jobService.update("c-9", created.id, {
+    // Aprovação pela moderação (via ADMIN) torna a vaga pública.
+    await authService.login({
+      email: "admin@conectainclusao.org",
+      password: "Admin@123",
+    });
+    await jobService.approve(created.id);
+    // Volta à sessão da empresa para editar.
+    await authService.login({ email: companyEmail, password: "Senha@123" });
+    const edited = await jobService.update(companyId, created.id, {
       title: "Dev Back-end Sênior",
     });
     expect(edited.status).toBe("PENDING");
@@ -115,15 +137,16 @@ describe("CRUD de vagas da empresa", () => {
   });
 
   it("pausar, encerrar e duplicar vaga", async () => {
+    const companyId = await seedCompany(`crud-${seq++}@empresa.com`);
     const created = await jobService.create(base);
-    const paused = await jobService.setStatus("c-9", created.id, "PAUSED");
+    const paused = await jobService.setStatus(companyId, created.id, "PAUSED");
     expect(paused.status).toBe("PAUSED");
 
-    const dup = await jobService.duplicate("c-9", created.id);
+    const dup = await jobService.duplicate(companyId, created.id);
     expect(dup.status).toBe("DRAFT");
     expect(dup.title).toMatch(/cópia/i);
 
-    const all = await jobService.listByCompany("c-9");
+    const all = await jobService.listByCompany(companyId);
     expect(all).toHaveLength(2);
   });
 });
@@ -146,28 +169,67 @@ describe("Gestão de candidaturas (E3)", () => {
   beforeEach(() => localStorage.clear());
 
   it("atualiza status e notifica o candidato", async () => {
-    const app = await applicationService.apply("cand-1", {
-      id: "job-1",
-      title: "Dev Front-end",
+    // Empresa cria a vaga...
+    const companyEmail = `e3-${seq++}@empresa.com`;
+    await seedCompany(companyEmail);
+    const job = await jobService.create({
+      companyId: "ignored",
       companyName: "TechInclui",
+      title: "Dev Front-end",
+      description: "Vaga inclusiva.",
+      location: "Remoto",
+      modality: "REMOTE",
+      level: "MID",
+      area: "Tecnologia",
+      accessibilityFeatures: ["SCREEN_READER"],
     });
-    await applicationService.updateStatus(app.id, "INTERVIEW");
 
-    const byJob = await applicationService.listByJob("job-1");
+    // ...candidato se candidata...
+    const candidateEmail = `e3-cand-${seq++}@exemplo.com`;
+    const candidateId = await seedCandidate(candidateEmail);
+    const app = await applicationService.apply(candidateId, {
+      id: job.id,
+      title: job.title,
+      companyName: job.companyName,
+    });
+
+    // ...empresa atualiza o status (notifica o candidato).
+    await authService.login({ email: companyEmail, password: "Senha@123" });
+    await applicationService.updateStatus(app.id, "INTERVIEW");
+    const byJob = await applicationService.listByJob(job.id);
     expect(byJob[0].status).toBe("INTERVIEW");
 
-    const notes = await applicationService.listNotifications("cand-1");
+    // Candidato vê a notificação.
+    await authService.login({ email: candidateEmail, password: "Senha@123" });
+    const notes = await applicationService.listNotifications(candidateId);
     expect(notes).toHaveLength(1);
     expect(notes[0].status).toBe("INTERVIEW");
   });
 
   it("não expõe acomodações sem consentimento (E3.3/NF2)", async () => {
-    await applicationService.apply("cand-2", {
-      id: "job-2",
-      title: "Analista",
+    const companyEmail = `e3b-${seq++}@empresa.com`;
+    await seedCompany(companyEmail);
+    const job = await jobService.create({
+      companyId: "ignored",
       companyName: "LogAccess",
-    }); // sem compartilhar
-    const [app] = await applicationService.listByJob("job-2");
+      title: "Analista",
+      description: "Vaga inclusiva.",
+      location: "Remoto",
+      modality: "REMOTE",
+      level: "MID",
+      area: "Financeiro",
+      accessibilityFeatures: [],
+    });
+
+    const candidateId = await seedCandidate(`e3b-cand-${seq++}@exemplo.com`);
+    await applicationService.apply(candidateId, {
+      id: job.id,
+      title: job.title,
+      companyName: job.companyName,
+    }); // sem compartilhar acomodações
+
+    await authService.login({ email: companyEmail, password: "Senha@123" });
+    const [app] = await applicationService.listByJob(job.id);
     expect(app.sharedAccommodations).toBeUndefined();
   });
 });

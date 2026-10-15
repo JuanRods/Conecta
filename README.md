@@ -31,12 +31,45 @@ A especificação completa está em [`.kiro/specs/conecta-inclusao`](.kiro/specs
 
 ## Como rodar
 
-```bash
-npm install
-npm run dev        # ambiente de desenvolvimento
-npm run build      # build de produção
-npm test           # testes unitários + acessibilidade (axe)
+O projeto tem **frontend** (React/Vite) e um **backend REST real** (Node +
+Express + SQLite) na pasta [`server/`](server). O frontend conversa com o
+backend via HTTP (não há mais mocks em `localStorage`).
 
+```bash
+# 1) Backend (API + banco)
+cd server
+npm install
+cp .env.example .env   # ajuste os segredos se desejar
+npm start              # sobe a API em http://localhost:4000 e cria/semeia o SQLite
+
+# 2) Frontend (em outro terminal)
+cd ..
+npm install
+cp .env.example .env   # VITE_API_URL aponta para a API (padrão http://localhost:4000)
+npm run dev            # ambiente de desenvolvimento
+npm run build          # build de produção
+npm test               # testes de integração + acessibilidade (axe)
+```
+
+> `npm test` sobe o backend real em memória, com um banco SQLite temporário, e
+> exercita o caminho completo (componente → serviço → HTTP → Express → SQLite).
+
+Atalho para subir API + preview juntos: `bash scripts/serve-local.sh`.
+
+### Backend (API + banco de dados)
+
+- **Node + Express + SQLite** (`better-sqlite3`): banco relacional real em
+  arquivo, sem servidor externo. Schema em [`server/src/db.js`](server/src/db.js).
+- **Autenticação** com **JWT** e senhas com **bcrypt**; **RBAC** por papel
+  (candidato/empresa/admin) aplicado no servidor.
+- **Dados sensíveis criptografados em repouso** com **AES-256-GCM** (bloco de
+  acomodações do candidato — LGPD/NF2).
+- Endpoints espelham os serviços do frontend: `/auth`, `/jobs`, `/companies`,
+  `/candidate`, `/reports`, `/moderation`, `/metrics`, `/privacy`.
+- Semente inicial: um administrador (`admin@conectainclusao.org` / `Admin@123`)
+  e um catálogo de vagas para a busca pública.
+
+```bash
 # Testes E2E (Playwright) — inclui navegação só por teclado
 npx playwright install --with-deps   # 1ª vez
 npm run test:e2e

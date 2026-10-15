@@ -63,12 +63,20 @@ describe("Serviço de privacidade (LGPD/NF2)", () => {
   beforeEach(() => localStorage.clear());
 
   it("registra e revoga consentimento versionado", async () => {
-    await privacyService.recordConsent("u-1");
-    expect(privacyService.hasConsented("u-1")).toBe(true);
-    expect(privacyService.getConsent("u-1")?.version).toBe(CONSENT_VERSION);
+    const session = await authService.register({
+      name: "Consent User",
+      email: "consent@exemplo.com",
+      password: "Senha@123",
+      accountType: "candidate",
+    });
+    const uid = session.user.id;
 
-    await privacyService.revokeConsent("u-1");
-    expect(privacyService.hasConsented("u-1")).toBe(false);
+    await privacyService.recordConsent(uid);
+    expect(privacyService.hasConsented(uid)).toBe(true);
+    expect(privacyService.getConsent(uid)?.version).toBe(CONSENT_VERSION);
+
+    await privacyService.revokeConsent(uid);
+    expect(privacyService.hasConsented(uid)).toBe(false);
   });
 
   it("exporta todos os dados do candidato (portabilidade)", async () => {
@@ -83,13 +91,24 @@ describe("Serviço de privacidade (LGPD/NF2)", () => {
   it("exclui a conta e todos os dados associados (direito à exclusão)", async () => {
     const user = await seedCandidateWithData();
     await privacyService.deleteCandidateAccount(user.id);
+    // A exclusão encerra a sessão; o consentimento em cache local é limpo.
+    expect(privacyService.hasConsented(user.id)).toBe(false);
 
+    // Verifica, como ADMIN, que a conta e seus dados sumiram do banco.
+    await authService.login({
+      email: "admin@conectainclusao.org",
+      password: "Admin@123",
+    });
     const users = await authService.listUsers();
     expect(users.find((u) => u.id === user.id)).toBeUndefined();
 
-    const apps = await applicationService.listByCandidate(user.id);
-    expect(apps).toHaveLength(0);
-    expect(privacyService.hasConsented(user.id)).toBe(false);
+    const db = (globalThis as { __conectaDb__?: unknown }).__conectaDb__ as {
+      prepare: (sql: string) => { get: (id: string) => { n: number } };
+    };
+    const apps = db
+      .prepare("SELECT COUNT(*) n FROM applications WHERE candidate_id = ?")
+      .get(user.id);
+    expect(apps.n).toBe(0);
   });
 });
 

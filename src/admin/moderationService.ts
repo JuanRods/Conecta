@@ -1,68 +1,19 @@
-import { jobService } from "../jobs/jobService";
-import { companyService } from "../company/companyService";
-import { reportService } from "../candidate/reportService";
-import { authService } from "../auth/authService";
-import type {
-  ModerationAction,
-  ModerationActionType,
-  ModerationTargetType,
-} from "./types";
+import { apiRequest } from "../api/client";
+import type { ModerationAction } from "./types";
 
 /**
- * Serviço de moderação (Fase 6 — M1, M2).
+ * Serviço de moderação (Fase 6 — M1, M2) — conversa com o backend real
+ * (rotas /moderation/*). O servidor executa cada ação em transação, registra o
+ * log de auditoria imutável (M1.4 / NF8) e notifica os autores (M1.3).
  *
- * NOTA DE AMBIENTE: MOCK em localStorage. Orquestra ações sobre vagas, empresas,
- * denúncias e contas, registrando TODAS as ações em um log de auditoria imutável
- * (M1.4 / NF8) e notificando os autores quando aplicável (M1.3).
+ * O administrador é inferido pelo token no backend; o parâmetro `admin` é
+ * mantido nas assinaturas por compatibilidade com os componentes.
  */
-
-const AUDIT_KEY = "conecta.moderation.audit";
-/** Notificações gerais por usuário (empresa/candidato) — mudanças de moderação. */
-const USER_NOTIF_KEY = "conecta.user.notifications";
 
 export interface UserNotification {
   type: "MODERATION";
   message: string;
   createdAt: string;
-}
-
-function makeId(): string {
-  return (
-    globalThis.crypto?.randomUUID?.() ??
-    `mod-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-}
-
-function simulateLatency<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), 200));
-}
-
-function loadAudit(): ModerationAction[] {
-  try {
-    return JSON.parse(
-      localStorage.getItem(AUDIT_KEY) ?? "[]",
-    ) as ModerationAction[];
-  } catch {
-    return [];
-  }
-}
-
-function record(entry: Omit<ModerationAction, "id" | "createdAt">) {
-  const all = loadAudit();
-  all.unshift({ ...entry, id: makeId(), createdAt: new Date().toISOString() });
-  localStorage.setItem(AUDIT_KEY, JSON.stringify(all));
-}
-
-function notifyUser(userId: string, message: string) {
-  const key = `${USER_NOTIF_KEY}.${userId}`;
-  let list: UserNotification[] = [];
-  try {
-    list = JSON.parse(localStorage.getItem(key) ?? "[]") as UserNotification[];
-  } catch {
-    list = [];
-  }
-  list.unshift({ type: "MODERATION", message, createdAt: new Date().toISOString() });
-  localStorage.setItem(key, JSON.stringify(list));
 }
 
 interface Admin {
@@ -71,141 +22,102 @@ interface Admin {
 }
 
 export const moderationService = {
-  // --- Fila agregada (M1.1) ---
   async getQueueCounts(): Promise<{
     jobs: number;
     companies: number;
     reports: number;
   }> {
-    const [jobs, companies, reports] = await Promise.all([
-      jobService.listPending(),
-      companyService.listPendingVerification(),
-      reportService.listPending(),
-    ]);
-    return simulateLatency({
-      jobs: jobs.length,
-      companies: companies.length,
-      reports: reports.length,
-    });
+    return apiRequest("/moderation/queue");
   },
 
   // --- Vagas (M1.2, M1.3) ---
-  async approveJob(admin: Admin, jobId: string): Promise<void> {
-    const job = await jobService.approve(jobId);
-    audit(admin, "JOB", jobId, job.title, "APPROVE");
-    notifyUser(job.companyId, `Sua vaga "${job.title}" foi aprovada e publicada.`);
-    await simulateLatency(null);
+  async approveJob(_admin: Admin, jobId: string): Promise<void> {
+    await apiRequest<void>(`/moderation/jobs/${jobId}/approve`, {
+      method: "POST",
+    });
   },
 
   async rejectJob(
-    admin: Admin,
+    _admin: Admin,
     jobId: string,
     reason: string,
     requestChanges = false,
   ): Promise<void> {
-    const job = await jobService.reject(jobId);
-    audit(
-      admin,
-      "JOB",
-      jobId,
-      job.title,
-      requestChanges ? "REQUEST_CHANGES" : "REJECT",
-      reason,
-    );
-    notifyUser(
-      job.companyId,
-      `Sua vaga "${job.title}" foi ${
-        requestChanges ? "devolvida para ajustes" : "rejeitada"
-      }. Motivo: ${reason}`,
-    );
-    await simulateLatency(null);
+    await apiRequest<void>(`/moderation/jobs/${jobId}/reject`, {
+      method: "POST",
+      body: { reason, requestChanges },
+    });
   },
 
   // --- Empresas (E1.3 / M1) ---
-  async verifyCompany(admin: Admin, userId: string): Promise<void> {
-    const company = await companyService.setVerification(userId, "VERIFIED");
-    audit(admin, "COMPANY", userId, company.name, "VERIFY");
-    notifyUser(userId, "Sua empresa foi verificada. Parabéns!");
-    await simulateLatency(null);
+  async verifyCompany(_admin: Admin, userId: string): Promise<void> {
+    await apiRequest<void>(`/moderation/companies/${userId}/verify`, {
+      method: "POST",
+    });
   },
 
   async rejectCompanyVerification(
-    admin: Admin,
+    _admin: Admin,
     userId: string,
     reason: string,
   ): Promise<void> {
-    const company = await companyService.setVerification(userId, "REJECTED");
-    audit(admin, "COMPANY", userId, company.name, "REJECT_VERIFICATION", reason);
-    notifyUser(userId, `A verificação da sua empresa foi recusada. Motivo: ${reason}`);
-    await simulateLatency(null);
+    await apiRequest<void>(`/moderation/companies/${userId}/reject`, {
+      method: "POST",
+      body: { reason },
+    });
   },
 
   // --- Denúncias (M2.1) ---
   async archiveReport(
-    admin: Admin,
+    _admin: Admin,
     reportId: string,
     targetLabel: string,
   ): Promise<void> {
-    await reportService.setStatus(reportId, "ARCHIVED");
-    audit(admin, "REPORT", reportId, targetLabel, "ARCHIVE_REPORT");
-    await simulateLatency(null);
+    await apiRequest<void>(`/moderation/reports/${reportId}/archive`, {
+      method: "POST",
+      body: { targetLabel },
+    });
   },
 
   // --- Contas (M2.5) ---
   async suspendUser(
-    admin: Admin,
+    _admin: Admin,
     userId: string,
     userName: string,
     reason: string,
   ): Promise<void> {
-    await authService.setUserStatus(userId, "SUSPENDED");
-    audit(admin, "USER", userId, userName, "SUSPEND_USER", reason);
-    notifyUser(userId, `Sua conta foi suspensa. Motivo: ${reason}`);
-    await simulateLatency(null);
+    await apiRequest<void>(`/moderation/users/${userId}/suspend`, {
+      method: "POST",
+      body: { userName, reason },
+    });
   },
 
   async reactivateUser(
-    admin: Admin,
+    _admin: Admin,
     userId: string,
     userName: string,
   ): Promise<void> {
-    await authService.setUserStatus(userId, "ACTIVE");
-    audit(admin, "USER", userId, userName, "REACTIVATE_USER");
-    notifyUser(userId, "Sua conta foi reativada.");
-    await simulateLatency(null);
+    await apiRequest<void>(`/moderation/users/${userId}/reactivate`, {
+      method: "POST",
+      body: { userName },
+    });
   },
 
   // --- Auditoria (M1.4 / NF8) ---
   async listAudit(): Promise<ModerationAction[]> {
-    return simulateLatency(loadAudit());
+    return apiRequest<ModerationAction[]>("/moderation/audit");
+  },
+
+  /** Notificações de moderação do usuário atual (empresa/candidato). */
+  async listUserNotifications(): Promise<UserNotification[]> {
+    return apiRequest<UserNotification[]>("/moderation/notifications");
   },
 };
 
-function audit(
-  admin: Admin,
-  targetType: ModerationTargetType,
-  targetId: string,
-  targetLabel: string,
-  action: ModerationActionType,
-  reason?: string,
-) {
-  record({
-    adminId: admin.id,
-    adminName: admin.name,
-    targetType,
-    targetId,
-    targetLabel,
-    action,
-    reason,
-  });
-}
-
-export function loadUserNotifications(userId: string): UserNotification[] {
-  try {
-    return JSON.parse(
-      localStorage.getItem(`${USER_NOTIF_KEY}.${userId}`) ?? "[]",
-    ) as UserNotification[];
-  } catch {
-    return [];
-  }
+/**
+ * Mantido por compatibilidade de API. As notificações de moderação agora vêm do
+ * backend; use `moderationService.listUserNotifications()` (assíncrono).
+ */
+export async function loadUserNotifications(): Promise<UserNotification[]> {
+  return moderationService.listUserNotifications();
 }

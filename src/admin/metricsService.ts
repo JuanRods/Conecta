@@ -1,12 +1,10 @@
-import { jobService } from "../jobs/jobService";
-import { companyService } from "../company/companyService";
-import { reportService } from "../candidate/reportService";
-import { authService } from "../auth/authService";
+import { apiRequest } from "../api/client";
 import { JOB_STATUS_LABELS, type JobStatus } from "../jobs/types";
 
 /**
- * Serviço de métricas do administrador (Fase 6 — M3).
- * Agrega contagens e permite exportação em CSV acessível.
+ * Serviço de métricas do administrador (Fase 6 — M3) — conversa com o backend
+ * real (GET /metrics). A agregação é feita no servidor (SQL); aqui apenas
+ * consumimos o resultado e geramos o CSV acessível.
  */
 
 export interface AdminMetrics {
@@ -16,44 +14,9 @@ export interface AdminMetrics {
   reports: { pending: number };
 }
 
-function simulateLatency<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), 200));
-}
-
 export const metricsService = {
   async get(): Promise<AdminMetrics> {
-    const [users, companies, pendingReports] = await Promise.all([
-      authService.listUsers(),
-      // listByCompany sem id não existe; usamos a verificação para total parcial
-      companyService.listPendingVerification(),
-      reportService.listPending(),
-    ]);
-
-    // Agrega vagas por status varrendo todas as empresas conhecidas via usuários.
-    const companyUsers = users.filter((u) => u.role === "COMPANY");
-    const jobsByStatus = emptyStatusCount();
-    for (const cu of companyUsers) {
-      const jobs = await jobService.listByCompany(cu.id);
-      for (const job of jobs) jobsByStatus[job.status] += 1;
-    }
-
-    const verifiedCount = companyUsers.length - companies.length;
-
-    return simulateLatency({
-      users: {
-        total: users.length,
-        candidates: users.filter((u) => u.role === "CANDIDATE").length,
-        companies: companyUsers.length,
-        suspended: users.filter((u) => u.status === "SUSPENDED").length,
-      },
-      jobsByStatus,
-      companies: {
-        total: companyUsers.length,
-        verified: Math.max(0, verifiedCount),
-        pending: companies.length,
-      },
-      reports: { pending: pendingReports.length },
-    });
+    return apiRequest<AdminMetrics>("/metrics");
   },
 
   /** Gera o CSV das métricas (M3). */
@@ -79,14 +42,3 @@ export const metricsService = {
       .join("\r\n");
   },
 };
-
-function emptyStatusCount(): Record<JobStatus, number> {
-  return {
-    DRAFT: 0,
-    PENDING: 0,
-    APPROVED: 0,
-    REJECTED: 0,
-    PAUSED: 0,
-    CLOSED: 0,
-  };
-}

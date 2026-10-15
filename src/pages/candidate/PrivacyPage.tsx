@@ -24,7 +24,7 @@ export function PrivacyPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user) setConsent(privacyService.getConsent(user.id));
+    if (user) privacyService.refreshConsent(user.id).then(setConsent);
   }, [user]);
 
   if (!user) return null;
