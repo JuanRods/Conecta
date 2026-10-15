@@ -1,0 +1,18 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo__mark {
+  flex-shrink: 0;
+}
+
+.logo__text {
+  font-size: 1.1rem;
+  color: var(--color-fg);
+}
+
+.logo__text strong {
+  color: var(--color-primary);
+}

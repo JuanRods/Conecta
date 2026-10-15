@@ -1,0 +1,80 @@
+# Conecta Inclusão — Plano de Implementação
+
+> Tarefas incrementais. Cada item referencia os requisitos atendidos. Comece pela base de acessibilidade, pois ela é transversal a tudo.
+
+## Fase 0 — Fundação do Projeto
+
+- [x] 0.1 Inicializar estrutura (frontend React+TS+Vite). _(NF3, NF5)_
+- [x] 0.2 Configurar formatação (Prettier) e scripts de teste (Vitest). _(NF1)_
+- [x] 0.3 Definir tokens de design e paleta do logo (roxo/teal/laranja). _(A4)_
+
+## Fase 1 — Base de Acessibilidade (Transversal)
+
+- [x] 1.1 Implementar layout com marcos semânticos e skip link. _(A1, A2)_
+- [x] 1.2 Implementar alternância de tema claro/escuro com persistência e `prefers-color-scheme`. _(A4)_
+- [x] 1.3 Criar componentes acessíveis base (botão, modal com focus trap, aria-live announcer). _(A1, A2, A3)_
+- [x] 1.4 Implementar preferências de apresentação (fonte, alto contraste, `prefers-reduced-motion`). _(A6)_
+- [x] 1.5 Implementar componente de **Navegação Guiada** (GuidedTour) reutilizável. _(A5)_
+- [x] 1.6 Integrar auditoria axe nos testes e configurar jest-axe. _(NF1)_
+
+> ⚠️ **Nota de ambiente:** o sandbox está em modo `INTEGRATIONS_ONLY` (sem acesso
+> ao registro npm), então `npm install`, `npm run build` e `npm test` não puderam
+> ser executados aqui. O código foi validado por parsing/formatação (Prettier).
+> Em uma máquina com internet, rode `npm install && npm test` para executar a
+> suíte de acessibilidade (jest-axe) já escrita em `src/test/`.
+
+## Fase 2 — Autenticação e RBAC
+
+- [ ] 2.1 Modelar `User` e papéis; migrações do banco. _(P1)_
+- [ ] 2.2 Endpoints de registro (candidato/empresa), login, recuperação de senha. _(P1)_
+- [ ] 2.3 Middleware de autorização por papel (RBAC) no backend. _(P1, NF2)_
+- [ ] 2.4 Telas acessíveis de cadastro/login com validação e foco em erros. _(P1, A3)_
+- [ ] 2.5 Tour guiado do fluxo de cadastro. _(A5)_
+
+## Fase 3 — Área Pública e Busca
+
+- [ ] 3.1 Modelar `Job` e filtros (modalidade, área, nível, recursos de acessibilidade). _(P2)_
+- [ ] 3.2 Endpoint de busca pública (apenas vagas aprovadas). _(P2, M1)_
+- [ ] 3.3 Home com busca e resultados com `aria-live`. _(P2, A3)_
+- [ ] 3.4 Página de detalhe da vaga com selos de acessibilidade. _(P2)_
+- [ ] 3.5 Tour guiado de busca de vagas. _(A5)_
+
+## Fase 4 — Perfil Candidato
+
+- [ ] 4.1 Modelar `CandidateProfile` com dados sensíveis criptografados. _(C1, NF2)_
+- [ ] 4.2 Formulário de perfil com acomodações opcionais e controle de visibilidade. _(C1)_
+- [ ] 4.3 Upload de currículo em formato acessível. _(C1)_
+- [ ] 4.4 Candidatura a vagas com consentimento de compartilhamento. _(C2, NF2)_
+- [ ] 4.5 Painel "Minhas candidaturas" com status e feedback acessível. _(C2, A3)_
+- [ ] 4.6 Favoritos e alertas de novas vagas. _(C2)_
+- [ ] 4.7 Fluxo de denúncia de conteúdo. _(C3)_
+- [ ] 4.8 Tour guiado de candidatura. _(A5)_
+
+## Fase 5 — Perfil Empresa
+
+- [ ] 5.1 Modelar `Company` com status de verificação. _(E1)_
+- [ ] 5.2 Formulário de perfil da empresa (recursos de acessibilidade oferecidos). _(E1)_
+- [ ] 5.3 CRUD de vagas com envio automático à moderação (status PENDING). _(E2, M1)_
+- [ ] 5.4 Assistente de descrição inclusiva (dicas/verificação de linguagem). _(E2)_
+- [ ] 5.5 Gestão de candidaturas por vaga, com proteção de dados sensíveis. _(E3, NF2)_
+- [ ] 5.6 Atualização de status com notificação ao candidato. _(E3)_
+- [ ] 5.7 Tour guiado de publicação de vaga. _(A5)_
+
+## Fase 6 — Painel do Administrador (Moderação)
+
+- [ ] 6.1 Fila de moderação (vagas pendentes, empresas a verificar, denúncias). _(M1)_
+- [ ] 6.2 Ações aprovar/rejeitar/solicitar ajuste com justificativa + notificação. _(M1)_
+- [ ] 6.3 Verificação de empresas. _(E1, M1)_
+- [ ] 6.4 Gestão de denúncias (arquivar/remover/suspender). _(M2)_
+- [ ] 6.5 Suspensão/reativação de contas com bloqueio de login. _(M2)_
+- [ ] 6.6 Log de auditoria de todas as ações de moderação. _(M1, NF8)_
+- [ ] 6.7 Painel de métricas e exportação CSV acessível. _(M3)_
+
+## Fase 7 — Qualidade, LGPD e Lançamento
+
+- [ ] 7.1 Testes E2E por perfil (Playwright) incluindo navegação só por teclado. _(A2, NF5)_
+- [ ] 7.2 Validação manual com leitor de tela (NVDA/VoiceOver). _(A3, NF5)_
+- [ ] 7.3 Integração do VLibras e verificação final de contraste nos dois temas. _(A4, NF6)_
+- [ ] 7.4 Fluxos LGPD: consentimento, exportação e exclusão de dados. _(NF2)_
+- [ ] 7.5 Otimização de desempenho (Core Web Vitals) e PWA/responsividade. _(NF3, NF4)_
+- [ ] 7.6 Auditoria final de acessibilidade (WCAG 2.1 AA / e-MAG). _(NF1)_

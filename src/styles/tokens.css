@@ -1,0 +1,113 @@
+/**
+ * Conecta Inclusão — Tokens de Design
+ * Paleta derivada do logo: roxo, teal, laranja + texto azul-escuro.
+ * Todos os pares de cor foram escolhidos para atender ao contraste WCAG 2.1 AA.
+ */
+
+:root {
+  /* Marca */
+  --brand-purple: #5b2a86;
+  --brand-teal: #2e8b9e;
+  --brand-orange: #e8862e;
+  --brand-ink: #1e2a4a;
+
+  /* Escala neutra */
+  --gray-50: #f7f8fa;
+  --gray-100: #eef0f4;
+  --gray-200: #d9dde6;
+  --gray-300: #b9c0ce;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+
+  /* Tipografia */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-scale: 1; /* ajustável nas preferências de apresentação */
+  --font-size-base: calc(1rem * var(--font-scale));
+  --line-height-base: 1.6;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Raio e sombra */
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  /* Alvo de toque mínimo (WCAG 2.5.5) */
+  --touch-target: 44px;
+
+  /* Foco visível reforçado */
+  --focus-ring: 3px solid var(--color-focus);
+  --focus-offset: 2px;
+}
+
+/* ---------- TEMA CLARO (padrão) ---------- */
+[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-surface: var(--gray-50);
+  --color-surface-2: var(--gray-100);
+  --color-fg: var(--brand-ink);
+  --color-fg-muted: var(--gray-700);
+  --color-border: var(--gray-200);
+
+  --color-primary: var(--brand-purple);
+  --color-primary-fg: #ffffff;
+  --color-secondary: #1f6f80; /* teal escurecido p/ contraste AA sobre branco */
+  --color-accent: #b4651d; /* laranja escurecido p/ contraste AA */
+
+  --color-focus: #0a66c2;
+  --color-success-bg: #e6f4ea;
+  --color-success-fg: #1b5e20;
+  --color-error-bg: #fdecea;
+  --color-error-fg: #b3261e;
+  --color-warning-bg: #fff4e5;
+  --color-warning-fg: #8a5000;
+}
+
+/* ---------- TEMA ESCURO ---------- */
+[data-theme="dark"] {
+  --color-bg: #0f1420;
+  --color-surface: #171d2b;
+  --color-surface-2: #212838;
+  --color-fg: #eef0f4;
+  --color-fg-muted: #c2c8d4;
+  --color-border: #333c50;
+
+  --color-primary: #b98ce0; /* roxo clareado p/ contraste AA sobre fundo escuro */
+  --color-primary-fg: #0f1420;
+  --color-secondary: #5fc3d6;
+  --color-accent: #f0a35a;
+
+  --color-focus: #7cc0ff;
+  --color-success-bg: #10361c;
+  --color-success-fg: #7fe0a0;
+  --color-error-bg: #3a1512;
+  --color-error-fg: #ff9b94;
+  --color-warning-bg: #3a2a0e;
+  --color-warning-fg: #f0c27a;
+}
+
+/* ---------- ALTO CONTRASTE (opcional, sobrepõe o tema) ---------- */
+[data-contrast="high"] {
+  --color-fg: #000000;
+  --color-bg: #ffffff;
+  --color-border: #000000;
+  --color-primary: #3d0066;
+  --color-primary-fg: #ffffff;
+  --color-focus: #0040a0;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --color-fg: #ffffff;
+  --color-bg: #000000;
+  --color-border: #ffffff;
+  --color-primary: #e0c3ff;
+  --color-primary-fg: #000000;
+  --color-focus: #9cccff;
+}
