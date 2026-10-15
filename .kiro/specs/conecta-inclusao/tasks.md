@@ -62,14 +62,26 @@
 
 ## Fase 4 — Perfil Candidato
 
-- [ ] 4.1 Modelar `CandidateProfile` com dados sensíveis criptografados. _(C1, NF2)_
-- [ ] 4.2 Formulário de perfil com acomodações opcionais e controle de visibilidade. _(C1)_
-- [ ] 4.3 Upload de currículo em formato acessível. _(C1)_
-- [ ] 4.4 Candidatura a vagas com consentimento de compartilhamento. _(C2, NF2)_
-- [ ] 4.5 Painel "Minhas candidaturas" com status e feedback acessível. _(C2, A3)_
-- [ ] 4.6 Favoritos e alertas de novas vagas. _(C2)_
-- [ ] 4.7 Fluxo de denúncia de conteúdo. _(C3)_
-- [ ] 4.8 Tour guiado de candidatura. _(A5)_
+- [x] 4.1 Modelar `CandidateProfile` com dados sensíveis criptografados. _(C1, NF2)_
+- [x] 4.2 Formulário de perfil com acomodações opcionais e controle de visibilidade. _(C1)_
+- [x] 4.3 Upload de currículo em formato acessível. _(C1)_
+- [x] 4.4 Candidatura a vagas com consentimento de compartilhamento. _(C2, NF2)_
+- [x] 4.5 Painel "Minhas candidaturas" com status e feedback acessível. _(C2, A3)_
+- [x] 4.6 Favoritos e alertas de novas vagas. _(C2)_
+- [x] 4.7 Fluxo de denúncia de conteúdo. _(C3)_
+- [x] 4.8 Tour guiado de candidatura. _(A5)_
+
+> **Fase 4 implementada.** Domínio e serviços do candidato em `src/candidate/`
+> (`profileService` com bloco sensível criptografado em repouso — NF2;
+> `applicationService` para candidaturas/favoritos/alertas; `reportService`
+> alimentando a fila de moderação da Fase 6). Painel do candidato com rotas
+> aninhadas em `src/pages/candidate/`: visão geral, perfil (dados profissionais,
+> acomodações opcionais e sigilosas, upload de currículo PDF/DOC/DOCX,
+> visibilidade), minhas candidaturas (status com progresso acessível) e
+> favoritos/alertas. O `JobDetailPage` ganhou candidatura real com consentimento
+> de compartilhamento de acomodações (C2.2/NF2), favoritar e denunciar (C3).
+> Tour guiado do perfil (A5). Testes em `src/test/candidate.test.tsx`.
+> `npm test` (27 testes) e `npm run build` passam.
 
 ## Fase 5 — Perfil Empresa
 

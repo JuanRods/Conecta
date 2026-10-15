@@ -12,7 +12,7 @@ Plataforma web de empregos **inclusiva** para Pessoas com Deficiência (PcD), co
 | 1 | Base de acessibilidade (temas, tour guiado, componentes, preferências) | ✅ |
 | 2 | Autenticação e RBAC | ✅ |
 | 3 | Área pública e busca de vagas | ✅ |
-| 4 | Perfil Candidato | ⏳ |
+| 4 | Perfil Candidato | ✅ |
 | 5 | Perfil Empresa | ⏳ |
 | 6 | Painel do Administrador (moderação) | ⏳ |
 | 7 | Qualidade, LGPD e lançamento | ⏳ |
@@ -55,6 +55,21 @@ npm test         # testes unitários + acessibilidade (axe)
 > para ser trocada por um cliente HTTP real (`GET /jobs`, `GET /jobs/:id`) sem
 > alterar os componentes.
 
+## Perfil do candidato (Fase 4)
+
+- 🧑‍💼 **Perfil profissional** (experiência, formação, habilidades, pretensão).
+- 🔐 **Informações de acessibilidade opcionais e sigilosas** (tipo de deficiência
+  e acomodações) — criptografadas em repouso e compartilhadas com empresas
+  **apenas mediante consentimento** no momento da candidatura (LGPD / NF2).
+- 📄 **Upload de currículo** em formatos acessíveis (PDF, DOC, DOCX).
+- 👁️ **Controle de visibilidade** do perfil (público, restrito ou privado).
+- 📨 **Candidatura** com confirmação e feedback acessível; painel **"Minhas
+  candidaturas"** com status e progresso (enviada → análise → entrevista →
+  finalizada).
+- ⭐ **Favoritos** e **alertas** de novas vagas por palavra-chave/área.
+- 🚩 **Denúncia** de vagas, encaminhada à fila de moderação.
+- 🧭 **Navegação guiada** do preenchimento de perfil.
+
 ## Estrutura
 
 ```
@@ -62,8 +77,9 @@ src/
 ├─ accessibility/   # contexto de preferências, tour guiado, aria-live, focus trap
 ├─ auth/            # contexto de autenticação, RBAC, serviço mock (Fase 2)
 ├─ jobs/            # domínio de vagas, serviço de busca, selos de acessibilidade
+├─ candidate/       # perfil, candidaturas, favoritos/alertas e denúncias (Fase 4)
 ├─ components/      # Layout, Button, Field, Modal, Logo, controles de a11y
-├─ pages/           # Home, autenticação, busca e detalhe de vagas
+├─ pages/           # Home, autenticação, vagas e painel do candidato
 ├─ styles/          # tokens de design e CSS global (temas)
-└─ test/            # setup e testes (acessibilidade, auth, vagas)
+└─ test/            # setup e testes (acessibilidade, auth, vagas, candidato)
 ```
