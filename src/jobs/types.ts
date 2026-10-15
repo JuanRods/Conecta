@@ -34,6 +34,15 @@ export type JobStatus =
   | "PAUSED"
   | "CLOSED";
 
+export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  DRAFT: "Rascunho",
+  PENDING: "Em moderação",
+  APPROVED: "Publicada",
+  REJECTED: "Rejeitada",
+  PAUSED: "Pausada",
+  CLOSED: "Encerrada",
+};
+
 export interface Job {
   id: string;
   companyId: string;

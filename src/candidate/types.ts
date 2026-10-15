@@ -135,6 +135,15 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
 
 export type ReportStatus = "PENDING" | "REVIEWED" | "ARCHIVED";
 
+/** Notificação ao candidato (ex.: mudança de status de candidatura — E3.2). */
+export interface Notification {
+  type: "APPLICATION_STATUS";
+  applicationId: string;
+  jobTitle: string;
+  status: ApplicationStatus;
+  createdAt: string;
+}
+
 export interface Report {
   id: string;
   targetType: ReportTargetType;

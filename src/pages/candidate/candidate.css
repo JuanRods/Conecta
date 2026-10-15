@@ -242,3 +242,16 @@
   padding: var(--space-6);
   margin-top: var(--space-4);
 }
+
+.cand-notifications {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.cand-notifications h3 {
+  margin-top: 0;
+}

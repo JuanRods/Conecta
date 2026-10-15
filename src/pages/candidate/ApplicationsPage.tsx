@@ -8,6 +8,7 @@ import {
   APPLICATION_STATUS_LABELS,
   type Application,
   type ApplicationStatus,
+  type Notification,
 } from "../../candidate/types";
 import { FEATURE_LABELS } from "../../jobs/types";
 
@@ -24,12 +25,18 @@ export function ApplicationsPage() {
   const { user } = useAuth();
   const { announce } = useAnnouncer();
   const [apps, setApps] = useState<Application[] | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    applicationService.listByCandidate(user.id).then((list) => {
-      if (active) setApps(list);
+    Promise.all([
+      applicationService.listByCandidate(user.id),
+      applicationService.listNotifications(user.id),
+    ]).then(([list, notes]) => {
+      if (!active) return;
+      setApps(list);
+      setNotifications(notes);
     });
     return () => {
       active = false;
@@ -66,6 +73,24 @@ export function ApplicationsPage() {
       <p className="cand-muted">
         {apps.length} {apps.length === 1 ? "candidatura" : "candidaturas"}.
       </p>
+
+      {notifications.length > 0 && (
+        <section
+          className="cand-notifications"
+          aria-labelledby="notif-title"
+        >
+          <h3 id="notif-title">Atualizações recentes</h3>
+          <ul>
+            {notifications.slice(0, 5).map((n, i) => (
+              <li key={i}>
+                <strong>{n.jobTitle}</strong>: status atualizado para{" "}
+                {APPLICATION_STATUS_LABELS[n.status]} em{" "}
+                {new Date(n.createdAt).toLocaleDateString("pt-BR")}.
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <ul className="cand-list">
         {apps.map((app) => {

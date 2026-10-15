@@ -1,4 +1,9 @@
-import type { AccessibilityFeature, Job, JobFilters } from "./types";
+import type {
+  AccessibilityFeature,
+  Job,
+  JobFilters,
+  JobStatus,
+} from "./types";
 
 /**
  * Serviço de vagas (Fase 3).
@@ -148,6 +153,10 @@ function loadJobs(): Job[] {
   return seeded;
 }
 
+function saveJobs(jobs: Job[]) {
+  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+}
+
 function matchesFilters(job: Job, filters: JobFilters): boolean {
   const { keyword, location, modality, level, area, features } = filters;
 
@@ -209,6 +218,117 @@ export const jobService = {
         .map((j) => j.area),
     );
     return simulateLatency([...areas].sort((a, b) => a.localeCompare(b)));
+  },
+
+  // ---------------------------------------------------------------------------
+  // Operações da EMPRESA (Fase 5) e da MODERAÇÃO (Fase 6) sobre o mesmo acervo.
+  // ---------------------------------------------------------------------------
+
+  /** Lista todas as vagas de uma empresa (qualquer status), mais recentes antes. */
+  async listByCompany(companyId: string): Promise<Job[]> {
+    const jobs = loadJobs()
+      .filter((j) => j.companyId === companyId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return simulateLatency(jobs);
+  },
+
+  /** Detalhe para a empresa dona da vaga — independe do status. */
+  async getOwnedById(companyId: string, id: string): Promise<Job | null> {
+    const job = loadJobs().find(
+      (j) => j.id === id && j.companyId === companyId,
+    );
+    return simulateLatency(job ?? null);
+  },
+
+  /**
+   * Cria uma vaga já encaminhada à moderação (status PENDING) — E2.3 / M1.
+   * `createdAt` é definido aqui; `publishedAt` só é preenchido na aprovação.
+   */
+  async create(
+    input: Omit<Job, "id" | "status" | "createdAt" | "publishedAt">,
+  ): Promise<Job> {
+    const all = loadJobs();
+    const job: Job = {
+      ...input,
+      id: makeId(),
+      status: "PENDING",
+      createdAt: new Date().toISOString(),
+    };
+    all.push(job);
+    saveJobs(all);
+    return simulateLatency(job);
+  },
+
+  /**
+   * Edita uma vaga da empresa. Edições em vagas já publicadas/rejeitadas voltam
+   * para a moderação (PENDING), pois o conteúdo mudou (M1).
+   */
+  async update(
+    companyId: string,
+    id: string,
+    patch: Partial<Omit<Job, "id" | "companyId" | "status" | "createdAt">>,
+  ): Promise<Job> {
+    const all = loadJobs();
+    const idx = all.findIndex((j) => j.id === id && j.companyId === companyId);
+    if (idx === -1) throw new Error("Vaga não encontrada.");
+    const current = all[idx];
+    const resetToModeration =
+      current.status === "APPROVED" || current.status === "REJECTED";
+    const updated: Job = {
+      ...current,
+      ...patch,
+      status: resetToModeration ? "PENDING" : current.status,
+      publishedAt: resetToModeration ? undefined : current.publishedAt,
+    };
+    all[idx] = updated;
+    saveJobs(all);
+    return simulateLatency(updated);
+  },
+
+  /** Altera o status de uma vaga da empresa (pausar, encerrar, reabrir). */
+  async setStatus(
+    companyId: string,
+    id: string,
+    status: JobStatus,
+  ): Promise<Job> {
+    const all = loadJobs();
+    const idx = all.findIndex((j) => j.id === id && j.companyId === companyId);
+    if (idx === -1) throw new Error("Vaga não encontrada.");
+    all[idx] = { ...all[idx], status };
+    saveJobs(all);
+    return simulateLatency(all[idx]);
+  },
+
+  /** Duplica uma vaga como novo rascunho (DRAFT) — E2.4. */
+  async duplicate(companyId: string, id: string): Promise<Job> {
+    const all = loadJobs();
+    const source = all.find((j) => j.id === id && j.companyId === companyId);
+    if (!source) throw new Error("Vaga não encontrada.");
+    const copy: Job = {
+      ...source,
+      id: makeId(),
+      title: `${source.title} (cópia)`,
+      status: "DRAFT",
+      createdAt: new Date().toISOString(),
+      publishedAt: undefined,
+    };
+    all.push(copy);
+    saveJobs(all);
+    return simulateLatency(copy);
+  },
+
+  /** Envia um rascunho (ou vaga pausada) à moderação. */
+  async submitForReview(companyId: string, id: string): Promise<Job> {
+    return this.setStatus(companyId, id, "PENDING");
+  },
+
+  /** Remove uma vaga da empresa. */
+  async remove(companyId: string, id: string): Promise<void> {
+    const all = loadJobs().filter(
+      (j) => !(j.id === id && j.companyId === companyId),
+    );
+    saveJobs(all);
+    await simulateLatency(null);
   },
 };
 

@@ -13,7 +13,7 @@ Plataforma web de empregos **inclusiva** para Pessoas com Deficiência (PcD), co
 | 2 | Autenticação e RBAC | ✅ |
 | 3 | Área pública e busca de vagas | ✅ |
 | 4 | Perfil Candidato | ✅ |
-| 5 | Perfil Empresa | ⏳ |
+| 5 | Perfil Empresa | ✅ |
 | 6 | Painel do Administrador (moderação) | ⏳ |
 | 7 | Qualidade, LGPD e lançamento | ⏳ |
 
@@ -70,16 +70,34 @@ npm test         # testes unitários + acessibilidade (axe)
 - 🚩 **Denúncia** de vagas, encaminhada à fila de moderação.
 - 🧭 **Navegação guiada** do preenchimento de perfil.
 
+## Perfil da empresa (Fase 5)
+
+- 🏢 **Perfil institucional** (nome, CNPJ, setor, descrição, site) com
+  **status de verificação** — a empresa nasce "pendente de verificação" até a
+  aprovação do administrador (Fase 6).
+- ♿ Destaque dos **recursos de acessibilidade** oferecidos no ambiente de
+  trabalho.
+- 📋 **CRUD de vagas**: criar, editar, pausar, encerrar, duplicar e remover.
+  Toda vaga vai para **moderação** (status `PENDING`) e só fica pública após
+  aprovação; editar uma vaga publicada a devolve à moderação.
+- ✍️ **Assistente de descrição inclusiva**: verifica termos capacitistas e
+  sugere alternativas, com dicas de redação.
+- 📥 **Gestão de candidaturas por vaga**: atualização de status com
+  **notificação ao candidato**, respeitando o consentimento de acomodações
+  (dados sensíveis só aparecem se o candidato autorizou — NF2).
+- 🧭 **Navegação guiada** da publicação de vaga.
+
 ## Estrutura
 
 ```
 src/
 ├─ accessibility/   # contexto de preferências, tour guiado, aria-live, focus trap
 ├─ auth/            # contexto de autenticação, RBAC, serviço mock (Fase 2)
-├─ jobs/            # domínio de vagas, serviço de busca, selos de acessibilidade
+├─ jobs/            # domínio de vagas, busca pública + CRUD da empresa
 ├─ candidate/       # perfil, candidaturas, favoritos/alertas e denúncias (Fase 4)
+├─ company/         # perfil da empresa, verificação e linguagem inclusiva (Fase 5)
 ├─ components/      # Layout, Button, Field, Modal, Logo, controles de a11y
-├─ pages/           # Home, autenticação, vagas e painel do candidato
+├─ pages/           # Home, autenticação, vagas, painel do candidato e da empresa
 ├─ styles/          # tokens de design e CSS global (temas)
-└─ test/            # setup e testes (acessibilidade, auth, vagas, candidato)
+└─ test/            # setup e testes (acessibilidade, auth, vagas, candidato, empresa)
 ```
