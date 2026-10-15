@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useGuidedTour } from "../accessibility/GuidedTour";
 import { Button } from "../components/Button";
 import "./HomePage.css";
@@ -8,6 +9,7 @@ import "./HomePage.css";
  */
 export function HomePage() {
   const { startTour } = useGuidedTour();
+  const navigate = useNavigate();
 
   function startWelcomeTour() {
     startTour({
@@ -51,7 +53,7 @@ export function HomePage() {
           comprometidas com um mercado de trabalho acessível e diverso.
         </p>
         <div className="hero__actions">
-          <Button variant="primary" onClick={() => undefined}>
+          <Button variant="primary" onClick={() => navigate("/vagas")}>
             Buscar vagas
           </Button>
           <Button variant="secondary" onClick={startWelcomeTour}>

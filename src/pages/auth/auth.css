@@ -1,0 +1,106 @@
+.auth {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding-block: var(--space-6);
+}
+
+.auth__title {
+  margin-top: 0;
+}
+
+.auth__lead {
+  color: var(--color-fg-muted);
+  margin-bottom: var(--space-6);
+}
+
+.auth__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.auth__actions {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.auth__links {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Seletor de tipo de conta (candidato / empresa) como radiogroup acessível */
+.account-type {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: var(--space-6);
+  border: 0;
+  padding: 0;
+}
+
+.account-type__legend {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+
+.account-type__option {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: var(--space-3);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.account-type__option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-surface-2);
+}
+
+.account-type__option:has(input:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.account-type__option strong {
+  display: block;
+}
+
+.account-type__option span {
+  font-size: 0.9rem;
+  color: var(--color-fg-muted);
+}
+
+/* Lista de regras de senha */
+.password-rules {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2) 0 var(--space-4);
+  font-size: 0.9rem;
+}
+
+.password-rules li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-fg-muted);
+}
+
+.password-rules li[data-met="true"] {
+  color: var(--color-success-fg);
+}
+
+@media (max-width: 480px) {
+  .account-type {
+    grid-template-columns: 1fr;
+  }
+}
