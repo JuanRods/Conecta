@@ -6,44 +6,17 @@ import type {
   JobAlert,
   Notification,
 } from "./types";
+import { apiRequest, ApiError } from "../api/client";
 
 /**
- * Serviço de candidaturas, favoritos e alertas (Fase 4 — C2).
- *
- * NOTA DE AMBIENTE: MOCK em localStorage (sandbox sem backend). A interface
- * espelha os endpoints do design (POST /applications, GET /applications/me).
+ * Serviço de candidaturas, favoritos e alertas — conversa com o backend real.
  *
  * NF2 / LGPD: as acomodações (dado sensível) só são anexadas à candidatura
  * quando o candidato dá consentimento explícito (`sharedAccommodations`).
+ *
+ * O candidato dono é inferido pelo token; os `candidateId` recebidos são
+ * mantidos nas assinaturas por compatibilidade com os componentes.
  */
-
-const APPLICATIONS_KEY = "conecta.candidate.applications";
-const FAVORITES_KEY = "conecta.candidate.favorites";
-const ALERTS_KEY = "conecta.candidate.alerts";
-const NOTIFICATIONS_KEY = "conecta.candidate.notifications";
-
-function makeId(): string {
-  return (
-    globalThis.crypto?.randomUUID?.() ??
-    `app-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-}
-
-function simulateLatency<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), 250));
-}
-
-function load<T>(key: string): T[] {
-  try {
-    return JSON.parse(localStorage.getItem(key) ?? "[]") as T[];
-  } catch {
-    return [];
-  }
-}
-
-function save<T>(key: string, value: T[]) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
 
 export class ApplicationError extends Error {
   constructor(
@@ -58,202 +31,107 @@ export class ApplicationError extends Error {
 export const applicationService = {
   // --- Candidaturas (C2.2, C2.3) ---
 
-  async listByCandidate(candidateId: string): Promise<Application[]> {
-    const apps = load<Application>(APPLICATIONS_KEY)
-      .filter((a) => a.candidateId === candidateId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return simulateLatency(apps);
+  async listByCandidate(_candidateId: string): Promise<Application[]> {
+    return apiRequest<Application[]>("/candidate/applications");
   },
 
-  async hasApplied(candidateId: string, jobId: string): Promise<boolean> {
-    const applied = load<Application>(APPLICATIONS_KEY).some(
-      (a) => a.candidateId === candidateId && a.jobId === jobId,
+  async hasApplied(_candidateId: string, jobId: string): Promise<boolean> {
+    const { applied } = await apiRequest<{ applied: boolean }>(
+      `/candidate/applications/applied/${jobId}`,
     );
-    return simulateLatency(applied);
+    return applied;
   },
 
-  /**
-   * Registra a candidatura. `sharedAccommodations` só é gravado se o candidato
-   * consentir em compartilhar as acomodações com a empresa (NF2).
-   */
   async apply(
-    candidateId: string,
+    _candidateId: string,
     job: Pick<Job, "id" | "title" | "companyName">,
     sharedAccommodations?: AccessibilityFeature[],
   ): Promise<Application> {
-    const all = load<Application>(APPLICATIONS_KEY);
-    if (all.some((a) => a.candidateId === candidateId && a.jobId === job.id)) {
-      throw new ApplicationError(
-        "ALREADY_APPLIED",
-        "Você já se candidatou a esta vaga.",
-      );
+    try {
+      return await apiRequest<Application>("/candidate/applications", {
+        method: "POST",
+        body: { job, sharedAccommodations },
+      });
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "ALREADY_APPLIED") {
+        throw new ApplicationError("ALREADY_APPLIED", err.message);
+      }
+      throw err;
     }
-    const application: Application = {
-      id: makeId(),
-      jobId: job.id,
-      jobTitle: job.title,
-      companyName: job.companyName,
-      candidateId,
-      status: "SENT",
-      sharedAccommodations:
-        sharedAccommodations && sharedAccommodations.length > 0
-          ? sharedAccommodations
-          : undefined,
-      createdAt: new Date().toISOString(),
-    };
-    all.push(application);
-    save(APPLICATIONS_KEY, all);
-    return simulateLatency(application);
   },
 
-  async withdraw(candidateId: string, applicationId: string): Promise<void> {
-    const all = load<Application>(APPLICATIONS_KEY).filter(
-      (a) => !(a.id === applicationId && a.candidateId === candidateId),
-    );
-    save(APPLICATIONS_KEY, all);
-    await simulateLatency(null);
+  async withdraw(_candidateId: string, applicationId: string): Promise<void> {
+    await apiRequest<void>(`/candidate/applications/${applicationId}`, {
+      method: "DELETE",
+    });
   },
 
   // --- Visão da EMPRESA (Fase 5 — E3) ---
 
-  /**
-   * Candidaturas de uma vaga. Só expõe `sharedAccommodations` quando o
-   * candidato consentiu em compartilhá-las no momento da candidatura (E3.3/NF2);
-   * caso contrário o campo já vem ausente da própria candidatura.
-   */
   async listByJob(jobId: string): Promise<Application[]> {
-    const apps = load<Application>(APPLICATIONS_KEY)
-      .filter((a) => a.jobId === jobId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return simulateLatency(apps);
+    return apiRequest<Application[]>(`/candidate/applications/job/${jobId}`);
   },
 
-  /**
-   * Atualiza o status de uma candidatura (E3.2) e registra uma notificação ao
-   * candidato (consumida por "Minhas candidaturas").
-   */
   async updateStatus(
     applicationId: string,
     status: ApplicationStatus,
   ): Promise<Application> {
-    const all = load<Application>(APPLICATIONS_KEY);
-    const idx = all.findIndex((a) => a.id === applicationId);
-    if (idx === -1) throw new Error("Candidatura não encontrada.");
-    all[idx] = { ...all[idx], status };
-    save(APPLICATIONS_KEY, all);
-    notify(all[idx].candidateId, {
-      type: "APPLICATION_STATUS",
-      applicationId,
-      jobTitle: all[idx].jobTitle,
-      status,
-      createdAt: new Date().toISOString(),
-    });
-    return simulateLatency(all[idx]);
-  },
-
-  /** Notificações do candidato (status de candidaturas) — E3.2. */
-  async listNotifications(candidateId: string): Promise<Notification[]> {
-    return simulateLatency(load<Notification>(notifKey(candidateId)));
-  },
-
-  /**
-   * Apaga TODOS os dados do candidato: candidaturas, favoritos, alertas e
-   * notificações (direito à exclusão — LGPD/NF2).
-   */
-  async purgeCandidate(candidateId: string): Promise<void> {
-    save(
-      APPLICATIONS_KEY,
-      load<Application>(APPLICATIONS_KEY).filter(
-        (a) => a.candidateId !== candidateId,
-      ),
+    return apiRequest<Application>(
+      `/candidate/applications/${applicationId}/status`,
+      { method: "PATCH", body: { status } },
     );
-    localStorage.removeItem(favKey(candidateId));
-    localStorage.removeItem(alertKey(candidateId));
-    localStorage.removeItem(notifKey(candidateId));
-    await simulateLatency(null);
+  },
+
+  async listNotifications(_candidateId: string): Promise<Notification[]> {
+    return apiRequest<Notification[]>("/candidate/notifications");
+  },
+
+  async purgeCandidate(_candidateId: string): Promise<void> {
+    // A exclusão completa é orquestrada por DELETE /privacy/account.
+    // Mantido por compatibilidade; sem efeito isolado no backend.
   },
 
   // --- Favoritos (C2.4) ---
 
-  async listFavorites(candidateId: string): Promise<Favorite[]> {
-    return simulateLatency(load<Favorite>(favKey(candidateId)));
+  async listFavorites(_candidateId: string): Promise<Favorite[]> {
+    return apiRequest<Favorite[]>("/candidate/favorites");
   },
 
-  async isFavorite(candidateId: string, jobId: string): Promise<boolean> {
-    return simulateLatency(
-      load<Favorite>(favKey(candidateId)).some((f) => f.jobId === jobId),
+  async isFavorite(_candidateId: string, jobId: string): Promise<boolean> {
+    const { favorite } = await apiRequest<{ favorite: boolean }>(
+      `/candidate/favorites/${jobId}`,
     );
+    return favorite;
   },
 
   async toggleFavorite(
-    candidateId: string,
+    _candidateId: string,
     job: Pick<Job, "id" | "title" | "companyName">,
   ): Promise<boolean> {
-    const key = favKey(candidateId);
-    const all = load<Favorite>(key);
-    const exists = all.some((f) => f.jobId === job.id);
-    const next = exists
-      ? all.filter((f) => f.jobId !== job.id)
-      : [
-          ...all,
-          {
-            jobId: job.id,
-            jobTitle: job.title,
-            companyName: job.companyName,
-            savedAt: new Date().toISOString(),
-          },
-        ];
-    save(key, next);
-    return simulateLatency(!exists); // true = agora é favorito
+    const { favorite } = await apiRequest<{ favorite: boolean }>(
+      "/candidate/favorites/toggle",
+      { method: "POST", body: { job } },
+    );
+    return favorite; // true = agora é favorito
   },
 
   // --- Alertas de novas vagas (C2.4) ---
 
-  async listAlerts(candidateId: string): Promise<JobAlert[]> {
-    return simulateLatency(load<JobAlert>(alertKey(candidateId)));
+  async listAlerts(_candidateId: string): Promise<JobAlert[]> {
+    return apiRequest<JobAlert[]>("/candidate/alerts");
   },
 
   async addAlert(
-    candidateId: string,
+    _candidateId: string,
     criteria: { keyword?: string; area?: string },
   ): Promise<JobAlert> {
-    const key = alertKey(candidateId);
-    const all = load<JobAlert>(key);
-    const alert: JobAlert = {
-      id: makeId(),
-      keyword: criteria.keyword?.trim() || undefined,
-      area: criteria.area?.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    };
-    all.push(alert);
-    save(key, all);
-    return simulateLatency(alert);
+    return apiRequest<JobAlert>("/candidate/alerts", {
+      method: "POST",
+      body: criteria,
+    });
   },
 
-  async removeAlert(candidateId: string, alertId: string): Promise<void> {
-    const key = alertKey(candidateId);
-    save(
-      key,
-      load<JobAlert>(key).filter((a) => a.id !== alertId),
-    );
-    await simulateLatency(null);
+  async removeAlert(_candidateId: string, alertId: string): Promise<void> {
+    await apiRequest<void>(`/candidate/alerts/${alertId}`, { method: "DELETE" });
   },
 };
-
-// Favoritos, alertas e notificações são por candidato (chaves derivadas).
-function favKey(candidateId: string): string {
-  return `${FAVORITES_KEY}.${candidateId}`;
-}
-function alertKey(candidateId: string): string {
-  return `${ALERTS_KEY}.${candidateId}`;
-}
-function notifKey(candidateId: string): string {
-  return `${NOTIFICATIONS_KEY}.${candidateId}`;
-}
-
-function notify(candidateId: string, notification: Notification) {
-  const key = notifKey(candidateId);
-  const all = load<Notification>(key);
-  all.unshift(notification);
-  save(key, all);
-}

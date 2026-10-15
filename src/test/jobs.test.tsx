@@ -56,14 +56,16 @@ describe("Serviço de vagas", () => {
   });
 
   it("não resolve detalhe de vaga não aprovada", async () => {
-    // Força o seed e tenta localizar a vaga PENDING pelo localStorage.
-    await jobService.search();
-    const raw = JSON.parse(localStorage.getItem("conecta.jobs") ?? "[]");
-    const pending = raw.find(
-      (j: { status: string }) => j.status === "PENDING",
-    );
+    // Localiza, direto no banco, uma vaga semeada em moderação (PENDING)...
+    const db = (globalThis as { __conectaDb__?: unknown }).__conectaDb__ as {
+      prepare: (sql: string) => { get: () => { id: string } | undefined };
+    };
+    const pending = db
+      .prepare("SELECT id FROM jobs WHERE status = 'PENDING' LIMIT 1")
+      .get();
     expect(pending).toBeTruthy();
-    const job = await jobService.getById(pending.id);
+    // ...e confirma que o detalhe público não a resolve (não vaza por URL direta).
+    const job = await jobService.getById(pending!.id);
     expect(job).toBeNull();
   });
 });

@@ -18,6 +18,43 @@ import { ModerationQueuePage } from "../pages/admin/ModerationQueuePage";
 
 const ADMIN = { id: "admin-1", name: "Admin Teste" };
 
+let seq = 0;
+
+/** Autentica como o administrador semeado. */
+async function asAdmin() {
+  await authService.login({
+    email: "admin@conectainclusao.org",
+    password: "Admin@123",
+  });
+}
+
+/** Cria e autentica uma empresa, retornando o id. */
+async function asCompany(email: string): Promise<string> {
+  const s = await authService.register({
+    name: "Empresa",
+    email,
+    password: "Senha@123",
+    accountType: "company",
+  });
+  return s.user.id;
+}
+
+/** Cria uma vaga PENDING como empresa autenticada e retorna a vaga. */
+async function createPendingJobAsCompany(email: string) {
+  await asCompany(email);
+  return jobService.create({
+    companyId: "ignored",
+    companyName: "TechInclui",
+    title: "Dev Acessível",
+    description: "Vaga para pessoa com deficiência.",
+    location: "Remoto",
+    modality: "REMOTE",
+    level: "MID",
+    area: "Tecnologia",
+    accessibilityFeatures: ["SCREEN_READER"],
+  });
+}
+
 function renderWithProviders(ui: ReactNode) {
   return render(
     <PreferencesProvider>
@@ -36,25 +73,12 @@ function renderWithProviders(ui: ReactNode) {
   );
 }
 
-async function createPendingJob() {
-  return jobService.create({
-    companyId: "c-1",
-    companyName: "TechInclui",
-    title: "Dev Acessível",
-    description: "Vaga para pessoa com deficiência.",
-    location: "Remoto",
-    modality: "REMOTE",
-    level: "MID",
-    area: "Tecnologia",
-    accessibilityFeatures: ["SCREEN_READER"],
-  });
-}
-
 describe("Moderação de vagas (M1)", () => {
   beforeEach(() => localStorage.clear());
 
   it("aprovar torna a vaga pública e registra auditoria + notificação", async () => {
-    const job = await createPendingJob();
+    const job = await createPendingJobAsCompany(`mod-${seq++}@empresa.com`);
+    await asAdmin();
     await moderationService.approveJob(ADMIN, job.id);
 
     const publicResults = await jobService.search({ keyword: "Acessível" });
@@ -65,7 +89,8 @@ describe("Moderação de vagas (M1)", () => {
   });
 
   it("rejeitar com motivo registra auditoria e não publica", async () => {
-    const job = await createPendingJob();
+    const job = await createPendingJobAsCompany(`mod-${seq++}@empresa.com`);
+    await asAdmin();
     await moderationService.rejectJob(ADMIN, job.id, "Linguagem inadequada.");
 
     const publicResults = await jobService.search({ keyword: "Acessível" });
@@ -81,8 +106,9 @@ describe("Verificação de empresa (M1)", () => {
   beforeEach(() => localStorage.clear());
 
   it("verifica a empresa e some da fila", async () => {
+    const companyId = await asCompany(`ver-${seq++}@empresa.com`);
     await companyService.save({
-      userId: "c-9",
+      userId: companyId,
       name: "LogAccess",
       cnpj: "11.222.333/0001-81",
       sector: "Logística",
@@ -92,11 +118,12 @@ describe("Verificação de empresa (M1)", () => {
       verificationStatus: "PENDING",
       updatedAt: new Date().toISOString(),
     });
-    await moderationService.verifyCompany(ADMIN, "c-9");
+    await asAdmin();
+    await moderationService.verifyCompany(ADMIN, companyId);
 
     const pending = await companyService.listPendingVerification();
-    expect(pending.find((c) => c.userId === "c-9")).toBeUndefined();
-    const company = await companyService.get("c-9");
+    expect(pending.find((c) => c.userId === companyId)).toBeUndefined();
+    const company = await companyService.setVerification(companyId, "VERIFIED");
     expect(company.verificationStatus).toBe("VERIFIED");
   });
 });
@@ -105,13 +132,23 @@ describe("Denúncias (M2)", () => {
   beforeEach(() => localStorage.clear());
 
   it("arquiva uma denúncia pendente", async () => {
+    const reporterId = await (async () => {
+      const s = await authService.register({
+        name: "Denunciante",
+        email: `rep-${seq++}@exemplo.com`,
+        password: "Senha@123",
+        accountType: "candidate",
+      });
+      return s.user.id;
+    })();
     const report = await reportService.submit({
       targetType: "JOB",
       targetId: "job-1",
       targetLabel: "Vaga X",
-      reporterId: "cand-1",
+      reporterId,
       reason: "SPAM",
     });
+    await asAdmin();
     await moderationService.archiveReport(ADMIN, report.id, "Vaga X");
     const pending = await reportService.listPending();
     expect(pending).toHaveLength(0);
@@ -130,6 +167,7 @@ describe("Contas (M2.5)", () => {
     });
     authService.logout();
 
+    await asAdmin();
     await moderationService.suspendUser(
       ADMIN,
       session.user.id,
@@ -141,6 +179,7 @@ describe("Contas (M2.5)", () => {
       authService.login({ email: "carlos@exemplo.com", password: "Senha@123" }),
     ).rejects.toBeInstanceOf(AuthError);
 
+    await asAdmin();
     await moderationService.reactivateUser(ADMIN, session.user.id, "Carlos");
     const ok = await authService.login({
       email: "carlos@exemplo.com",
@@ -154,6 +193,7 @@ describe("Métricas (M3)", () => {
   beforeEach(() => localStorage.clear());
 
   it("gera CSV com cabeçalho e totais", async () => {
+    await asAdmin();
     const metrics = await metricsService.get();
     const csv = metricsService.toCsv(metrics);
     expect(csv.split("\r\n")[0]).toBe('"Métrica",Valor');
@@ -165,7 +205,8 @@ describe("Página de moderação", () => {
   beforeEach(() => localStorage.clear());
 
   it("não possui violações de acessibilidade (axe)", async () => {
-    await createPendingJob();
+    await createPendingJobAsCompany(`modpage-${seq++}@empresa.com`);
+    await asAdmin();
     const { container } = renderWithProviders(<ModerationQueuePage />);
     await screen.findByRole("heading", {
       name: /vagas aguardando moderação/i,

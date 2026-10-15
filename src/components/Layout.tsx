@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { useAuth, dashboardPathForRole } from "../auth/AuthContext";
 import { useAnnouncer } from "../accessibility/Announcer";
 import { VLibras } from "../accessibility/VLibras";
+import { GuidedTourLauncher } from "../accessibility/GuidedTourLauncher";
 import "./Layout.css";
 
 /**
@@ -84,6 +85,10 @@ export function Layout() {
           </p>
         </div>
       </footer>
+
+      {/* Lançador flutuante da navegação guiada (A5): ícone + mensagem com
+          fade-out ao tirar o mouse. */}
+      <GuidedTourLauncher />
 
       {/* Widget de tradução para Libras (NF6) */}
       <VLibras />

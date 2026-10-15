@@ -33,11 +33,19 @@ function renderWithProviders(ui: ReactNode, initialPath = "/") {
   );
 }
 
-/** Cria e autentica um candidato, retornando o id de usuário. */
-async function seedCandidate(): Promise<string> {
+let candidateSeq = 0;
+
+/**
+ * Cria e autentica um candidato, retornando o id de usuário. A sessão (token)
+ * fica ativa no cliente HTTP, de modo que os serviços operam como o candidato
+ * autenticado — refletindo o comportamento real do backend (RBAC).
+ */
+async function seedCandidate(
+  email = "ana@exemplo.com",
+): Promise<string> {
   const session = await authService.register({
     name: "Ana Souza",
-    email: "ana@exemplo.com",
+    email,
     password: "Senha@123",
     accountType: "candidate",
   });
@@ -48,7 +56,7 @@ describe("Serviço de perfil do candidato", () => {
   beforeEach(() => localStorage.clear());
 
   it("salva e lê o perfil, mantendo as acomodações sensíveis", async () => {
-    const userId = "u-1";
+    const userId = await seedCandidate(`perfil-${candidateSeq++}@exemplo.com`);
     await profileService.save({
       userId,
       headline: "Desenvolvedora",
@@ -71,9 +79,10 @@ describe("Serviço de perfil do candidato", () => {
     expect(loaded.sensitive.accommodations).toContain("SCREEN_READER");
   });
 
-  it("não guarda o bloco sensível em texto puro (ofuscado em repouso)", async () => {
+  it("não guarda o bloco sensível em texto puro (criptografado em repouso)", async () => {
+    const userId = await seedCandidate(`cripto-${candidateSeq++}@exemplo.com`);
     await profileService.save({
-      userId: "u-2",
+      userId,
       headline: "Analista",
       bio: "",
       skills: [],
@@ -86,11 +95,17 @@ describe("Serviço de perfil do candidato", () => {
       },
       updatedAt: new Date().toISOString(),
     });
-    const raw = localStorage.getItem("conecta.candidate.profiles") ?? "";
-    // O rótulo bruto não deve aparecer; apenas a forma "enc:...".
-    expect(raw).toContain("enc:");
-    expect(raw).not.toContain("HEARING");
-    expect(raw).not.toContain("SIGN_LANGUAGE");
+    // Verifica diretamente no SQLite: o bloco sensível é cifrado (AES-256-GCM),
+    // nunca gravado em texto puro (NF2 / LGPD).
+    const db = (globalThis as { __conectaDb__?: unknown }).__conectaDb__ as {
+      prepare: (sql: string) => { get: (id: string) => { sensitive_enc: string } };
+    };
+    const row = db
+      .prepare("SELECT sensitive_enc FROM candidate_profiles WHERE user_id = ?")
+      .get(userId);
+    expect(row.sensitive_enc).toMatch(/^gcm:/);
+    expect(row.sensitive_enc).not.toContain("HEARING");
+    expect(row.sensitive_enc).not.toContain("SIGN_LANGUAGE");
   });
 });
 
@@ -100,29 +115,38 @@ describe("Serviço de candidaturas e favoritos", () => {
   const job = { id: "job-1", title: "Dev Front-end", companyName: "TechInclui" };
 
   it("registra candidatura e impede duplicidade", async () => {
-    await applicationService.apply("cand-1", job, ["SCREEN_READER"]);
-    const apps = await applicationService.listByCandidate("cand-1");
+    const id = await seedCandidate(`app1-${candidateSeq++}@exemplo.com`);
+    await applicationService.apply(id, job, ["SCREEN_READER"]);
+    const apps = await applicationService.listByCandidate(id);
     expect(apps).toHaveLength(1);
     expect(apps[0].status).toBe("SENT");
     expect(apps[0].sharedAccommodations).toContain("SCREEN_READER");
 
-    await expect(applicationService.apply("cand-1", job)).rejects.toThrow(
+    await expect(applicationService.apply(id, job)).rejects.toThrow(
       /já se candidatou/i,
     );
   });
 
   it("só grava acomodações quando há consentimento", async () => {
-    await applicationService.apply("cand-2", job); // sem compartilhar
-    const [app] = await applicationService.listByCandidate("cand-2");
+    const id = await seedCandidate(`app2-${candidateSeq++}@exemplo.com`);
+    await applicationService.apply(id, job); // sem compartilhar
+    const [app] = await applicationService.listByCandidate(id);
     expect(app.sharedAccommodations).toBeUndefined();
   });
 
   it("alterna favoritos e isola por candidato", async () => {
-    expect(await applicationService.toggleFavorite("cand-3", job)).toBe(true);
-    expect(await applicationService.isFavorite("cand-3", job.id)).toBe(true);
-    // Outro candidato não vê o favorito.
-    expect(await applicationService.isFavorite("cand-4", job.id)).toBe(false);
-    expect(await applicationService.toggleFavorite("cand-3", job)).toBe(false);
+    const emailA = `fav-a-${candidateSeq++}@exemplo.com`;
+    const a = await seedCandidate(emailA);
+    expect(await applicationService.toggleFavorite(a, job)).toBe(true);
+    expect(await applicationService.isFavorite(a, job.id)).toBe(true);
+
+    // Outro candidato (nova sessão) não vê o favorito do primeiro.
+    const b = await seedCandidate(`fav-b-${candidateSeq++}@exemplo.com`);
+    expect(await applicationService.isFavorite(b, job.id)).toBe(false);
+
+    // Volta à sessão do primeiro candidato para alternar de volta.
+    await authService.login({ email: emailA, password: "Senha@123" });
+    expect(await applicationService.toggleFavorite(a, job)).toBe(false);
   });
 });
 
@@ -130,12 +154,18 @@ describe("Serviço de denúncias", () => {
   beforeEach(() => localStorage.clear());
 
   it("envia a denúncia à fila de moderação como PENDING", async () => {
+    const reporterId = await seedCandidate(`den-${candidateSeq++}@exemplo.com`);
     await reportService.submit({
       targetType: "JOB",
       targetId: "job-9",
       targetLabel: "Vaga suspeita",
-      reporterId: "cand-1",
+      reporterId,
       reason: "DISCRIMINATION",
+    });
+    // A fila de moderação é lida por um ADMIN.
+    await authService.login({
+      email: "admin@conectainclusao.org",
+      password: "Admin@123",
     });
     const pending = await reportService.listPending();
     expect(pending).toHaveLength(1);

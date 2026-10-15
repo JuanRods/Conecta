@@ -1,0 +1,83 @@
+/* Lançador flutuante da navegação guiada: ícone + mensagem com fade-out. */
+
+.tour-launcher {
+  position: fixed;
+  /* Canto inferior ESQUERDO para não colidir com o widget VLibras (direita). */
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/*
+ * Mensagem ao lado do ícone. Começa invisível (opacity 0) e levemente
+ * deslocada; ao receber o modificador `--visible` (hover/foco), surge. Quando o
+ * mouse sai, o modificador é removido e ela DESAPARECE GRADUALMENTE (fade-out)
+ * graças à transição de opacidade — comportamento pedido.
+ */
+.tour-launcher__message {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  pointer-events: none; /* não interfere no hover do ícone */
+
+  /* Estado padrão: oculto. A transição cuida tanto do fade-in quanto do -out. */
+  opacity: 0;
+  transform: translateX(-0.5rem);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.tour-launcher__message--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.tour-launcher__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  min-width: var(--touch-target);
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: filter 0.15s ease;
+}
+
+.tour-launcher__btn:hover {
+  filter: brightness(0.92);
+}
+
+.tour-launcher__icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/*
+ * Redução de movimento (A4 / prefers-reduced-motion): sem deslize, apenas um
+ * fade bem rápido. O global.css já reduz durações, mas aqui tornamos explícito.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .tour-launcher__message {
+    transform: none;
+    transition: opacity 0.01ms;
+  }
+}
+
+[data-reduced-motion="true"] .tour-launcher__message {
+  transform: none;
+  transition: opacity 0.01ms;
+}

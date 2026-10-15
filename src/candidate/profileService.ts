@@ -1,114 +1,42 @@
-import type { CandidateProfile, ResumeFile, SensitiveInfo } from "./types";
+import type { CandidateProfile, ResumeFile } from "./types";
+import { apiRequest } from "../api/client";
 
 /**
- * Serviço de perfil do candidato (Fase 4 — C1).
+ * Serviço de perfil do candidato — conversa com o backend real
+ * (GET/PUT/DELETE /candidate/profile).
  *
- * NOTA DE AMBIENTE: sandbox INTEGRATIONS_ONLY (sem backend). Implementação MOCK
- * em localStorage, com interface pronta para um cliente HTTP real.
- *
- * LGPD / NF2: o bloco `sensitive` (tipo de deficiência e acomodações) é
- * "criptografado em repouso". Aqui usamos uma ofuscação simbólica (base64) só
- * para demonstrar o contrato — NÃO é criptografia real. No backend, usar KMS/
- * criptografia autenticada e acesso auditado.
+ * LGPD / NF2: o bloco `sensitive` (tipo de deficiência e acomodações) é enviado
+ * ao backend, que o criptografa em repouso com AES-256-GCM (criptografia
+ * autenticada). O candidato dono é inferido pelo token; o `userId` recebido é
+ * mantido na assinatura por compatibilidade com os componentes.
  */
 
-const PROFILES_KEY = "conecta.candidate.profiles";
-
-interface StoredProfile extends Omit<CandidateProfile, "sensitive"> {
-  /** Campo sensível guardado "cifrado". */
-  sensitiveEnc: string;
-}
-
-function encrypt(info: SensitiveInfo): string {
-  // SIMULAÇÃO — ver nota acima. Nunca use base64 como segurança real.
-  return `enc:${btoa(unescape(encodeURIComponent(JSON.stringify(info))))}`;
-}
-
-function decrypt(enc: string): SensitiveInfo {
-  const empty: SensitiveInfo = { accommodations: [] };
-  try {
-    if (!enc.startsWith("enc:")) return empty;
-    const json = decodeURIComponent(escape(atob(enc.slice(4))));
-    const parsed = JSON.parse(json) as SensitiveInfo;
-    return { ...parsed, accommodations: parsed.accommodations ?? [] };
-  } catch {
-    return empty;
-  }
-}
-
-function loadAll(): StoredProfile[] {
-  try {
-    return JSON.parse(
-      localStorage.getItem(PROFILES_KEY) ?? "[]",
-    ) as StoredProfile[];
-  } catch {
-    return [];
-  }
-}
-
-function saveAll(profiles: StoredProfile[]) {
-  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-}
-
-function simulateLatency<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), 250));
-}
-
-function toProfile(stored: StoredProfile): CandidateProfile {
-  const { sensitiveEnc, ...rest } = stored;
-  return { ...rest, sensitive: decrypt(sensitiveEnc) };
-}
-
-function emptyProfile(userId: string): CandidateProfile {
-  return {
-    userId,
-    headline: "",
-    bio: "",
-    skills: [],
-    experience: "",
-    education: "",
-    salaryExpectation: "",
-    visibility: "APPLIED_ONLY",
-    sensitive: { accommodations: [] },
-    updatedAt: new Date().toISOString(),
-  };
-}
-
 export const profileService = {
-  /** Retorna o perfil do usuário, ou um perfil vazio pronto para edição. */
-  async get(userId: string): Promise<CandidateProfile> {
-    const found = loadAll().find((p) => p.userId === userId);
-    return simulateLatency(found ? toProfile(found) : emptyProfile(userId));
+  async get(_userId: string): Promise<CandidateProfile> {
+    return apiRequest<CandidateProfile>("/candidate/profile");
   },
 
-  /** Indica se já existe perfil salvo (para a UI diferenciar criação/edição). */
-  async exists(userId: string): Promise<boolean> {
-    return simulateLatency(loadAll().some((p) => p.userId === userId));
+  async exists(_userId: string): Promise<boolean> {
+    const { exists } = await apiRequest<{ exists: boolean }>(
+      "/candidate/profile/exists",
+    );
+    return exists;
   },
 
   async save(profile: CandidateProfile): Promise<CandidateProfile> {
-    const { sensitive, ...rest } = profile;
-    const stored: StoredProfile = {
-      ...rest,
-      updatedAt: new Date().toISOString(),
-      sensitiveEnc: encrypt(sensitive),
-    };
-    const all = loadAll().filter((p) => p.userId !== profile.userId);
-    all.push(stored);
-    saveAll(all);
-    return simulateLatency(toProfile(stored));
+    return apiRequest<CandidateProfile>("/candidate/profile", {
+      method: "PUT",
+      body: profile,
+    });
   },
 
-  /** Remove o currículo anexado. */
   async removeResume(userId: string): Promise<CandidateProfile> {
     const current = await this.get(userId);
     return this.save({ ...current, resume: undefined });
   },
 
-  /** Apaga o perfil do usuário (direito à exclusão — LGPD/NF2). */
-  async delete(userId: string): Promise<void> {
-    saveAll(loadAll().filter((p) => p.userId !== userId));
-    await simulateLatency(null);
+  async delete(_userId: string): Promise<void> {
+    await apiRequest<void>("/candidate/profile", { method: "DELETE" });
   },
 };
 

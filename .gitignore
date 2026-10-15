@@ -14,3 +14,7 @@ blob-report
 .env
 .env.*
 !.env.example
+
+# Artefatos de verificação (screenshots do navegador etc.)
+.kiro/artifacts
+.browserhome
