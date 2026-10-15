@@ -185,7 +185,7 @@ export function ProfilePage() {
   return (
     <form onSubmit={handleSubmit} noValidate aria-labelledby="perfil-title">
       <h2 id="perfil-title">Meu perfil</h2>
-      <p className="cand-muted">
+      <p className="text-muted">
         Os campos marcados com <span aria-hidden="true">*</span> são
         obrigatórios. As informações de deficiência são opcionais e sigilosas.
       </p>
@@ -193,13 +193,13 @@ export function ProfilePage() {
       <FormErrorSummary errors={errors} />
 
       {savedAt && (
-        <p className="cand-success" role="status">
+        <p className="feedback-success" role="status">
           Perfil salvo em {new Date(savedAt).toLocaleString("pt-BR")}.
         </p>
       )}
 
       {/* --- Dados profissionais (C1.1) --- */}
-      <fieldset id="perfil-profissional" className="cand-fieldset">
+      <fieldset id="perfil-profissional" className="form-fieldset">
         <legend>Dados profissionais</legend>
 
         <Field
@@ -269,9 +269,9 @@ export function ProfilePage() {
       </fieldset>
 
       {/* --- Bloco sensível (C1.2 / NF2) --- */}
-      <fieldset id="perfil-sensivel" className="cand-fieldset cand-fieldset--sensitive">
+      <fieldset id="perfil-sensivel" className="form-fieldset form-fieldset--sensitive">
         <legend>Informações de acessibilidade (opcional e sigiloso)</legend>
-        <p className="cand-muted">
+        <p className="text-muted">
           Estes dados são criptografados e só são compartilhados com empresas
           mediante seu consentimento no momento da candidatura.
         </p>
@@ -313,11 +313,11 @@ export function ProfilePage() {
           />
         </div>
 
-        <fieldset className="cand-features">
+        <fieldset className="form-group">
           <legend>Acomodações necessárias</legend>
-          <div className="cand-checks">
+          <div className="choice-grid">
             {FEATURES.map((f) => (
-              <label key={f} className="cand-check">
+              <label key={f} className="choice">
                 <input
                   type="checkbox"
                   checked={profile.sensitive.accommodations.includes(f)}
@@ -331,7 +331,7 @@ export function ProfilePage() {
       </fieldset>
 
       {/* --- Currículo (C1.3) --- */}
-      <fieldset id="perfil-curriculo" className="cand-fieldset">
+      <fieldset id="perfil-curriculo" className="form-fieldset">
         <legend>Currículo</legend>
         <div className="field">
           <label className="field__label" htmlFor="curriculo">
@@ -369,10 +369,10 @@ export function ProfilePage() {
       </fieldset>
 
       {/* --- Visibilidade (C1.4) --- */}
-      <fieldset id="perfil-visibilidade" className="cand-fieldset">
+      <fieldset id="perfil-visibilidade" className="form-fieldset">
         <legend>Visibilidade do perfil</legend>
         {VISIBILITIES.map((v) => (
-          <label key={v} className="cand-radio">
+          <label key={v} className="choice">
             <input
               type="radio"
               name="visibility"
@@ -385,7 +385,7 @@ export function ProfilePage() {
         ))}
       </fieldset>
 
-      <div className="cand-actions">
+      <div className="form-actions">
         <Button type="submit" disabled={saving}>
           {saving ? "Salvando…" : "Salvar perfil"}
         </Button>

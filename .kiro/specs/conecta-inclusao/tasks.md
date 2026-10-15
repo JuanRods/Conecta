@@ -107,13 +107,32 @@
 
 ## Fase 6 — Painel do Administrador (Moderação)
 
-- [ ] 6.1 Fila de moderação (vagas pendentes, empresas a verificar, denúncias). _(M1)_
-- [ ] 6.2 Ações aprovar/rejeitar/solicitar ajuste com justificativa + notificação. _(M1)_
-- [ ] 6.3 Verificação de empresas. _(E1, M1)_
-- [ ] 6.4 Gestão de denúncias (arquivar/remover/suspender). _(M2)_
-- [ ] 6.5 Suspensão/reativação de contas com bloqueio de login. _(M2)_
-- [ ] 6.6 Log de auditoria de todas as ações de moderação. _(M1, NF8)_
-- [ ] 6.7 Painel de métricas e exportação CSV acessível. _(M3)_
+- [x] 6.1 Fila de moderação (vagas pendentes, empresas a verificar, denúncias). _(M1)_
+- [x] 6.2 Ações aprovar/rejeitar/solicitar ajuste com justificativa + notificação. _(M1)_
+- [x] 6.3 Verificação de empresas. _(E1, M1)_
+- [x] 6.4 Gestão de denúncias (arquivar/remover/suspender). _(M2)_
+- [x] 6.5 Suspensão/reativação de contas com bloqueio de login. _(M2)_
+- [x] 6.6 Log de auditoria de todas as ações de moderação. _(M1, NF8)_
+- [x] 6.7 Painel de métricas e exportação CSV acessível. _(M3)_
+
+> **Fase 6 implementada.** Serviços em `src/admin/` (`moderationService`
+> orquestra aprovar/rejeitar vaga, verificar/recusar empresa, arquivar denúncia
+> e suspender/reativar conta, com **log de auditoria** imutável — M1.4/NF8 — e
+> notificações aos autores; `metricsService` agrega números e exporta CSV — M3).
+> Métodos de moderação adicionados a `jobService` (approve/reject/listPending),
+> `companyService` (setVerification), `reportService` (setStatus) e
+> `authService` (listUsers/setUserStatus — login já bloqueia SUSPENDED). Painel
+> do admin com rotas aninhadas em `src/pages/admin/`: visão geral, fila de
+> moderação, denúncias, contas, auditoria e métricas. Testes em
+> `src/test/admin.test.tsx`.
+>
+> **Reorganização do CSS por elementos.** Criada a camada
+> `src/styles/elements/` (um arquivo por elemento: `dashboard`, `card`, `badge`,
+> `stat`, `callout`, `form-layout`, `text`), importada globalmente. Os painéis
+> de candidato, empresa e admin passaram a **reutilizar** essas classes em vez de
+> duplicar regras com prefixos (`cand-*`/`comp-*`), e cada CSS de página ficou só
+> com o que é exclusivo dela — facilitando a edição do design em um só lugar.
+> `npm test` (44 testes) e `npm run build` passam.
 
 ## Fase 7 — Qualidade, LGPD e Lançamento
 

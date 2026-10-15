@@ -84,4 +84,30 @@ export const companyService = {
     saveAll([...all.filter((c) => c.userId !== company.userId), next]);
     return simulateLatency(next);
   },
+
+  // --- Verificação pela MODERAÇÃO (Fase 6 — E1.3 / M1) ---
+
+  /** Empresas aguardando verificação. */
+  async listPendingVerification(): Promise<Company[]> {
+    return simulateLatency(
+      loadAll().filter((c) => c.verificationStatus === "PENDING"),
+    );
+  },
+
+  /** Define o status de verificação (verificar/recusar). */
+  async setVerification(
+    userId: string,
+    status: Company["verificationStatus"],
+  ): Promise<Company> {
+    const all = loadAll();
+    const idx = all.findIndex((c) => c.userId === userId);
+    if (idx === -1) throw new Error("Empresa não encontrada.");
+    all[idx] = {
+      ...all[idx],
+      verificationStatus: status,
+      updatedAt: new Date().toISOString(),
+    };
+    saveAll(all);
+    return simulateLatency(all[idx]);
+  },
 };

@@ -1,0 +1,10 @@
+/**
+ * ELEMENTO: Utilitários de texto
+ * -----------------------------------------------------------------------------
+ * Pequenos auxiliares tipográficos reutilizáveis.
+ */
+
+/* Texto secundário / de apoio */
+.text-muted {
+  color: var(--color-fg-muted);
+}

@@ -16,6 +16,16 @@ export const VERIFICATION_LABELS: Record<VerificationStatus, string> = {
   REJECTED: "Verificação recusada",
 };
 
+/** Modificador do elemento `.badge` para cada status de verificação. */
+export const VERIFICATION_BADGE: Record<
+  VerificationStatus,
+  "success" | "warning" | "error"
+> = {
+  PENDING: "warning",
+  VERIFIED: "success",
+  REJECTED: "error",
+};
+
 export interface Company {
   userId: string;
   name: string;

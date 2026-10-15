@@ -11,15 +11,15 @@ export function CompanyDashboard() {
   if (!user) return null;
 
   return (
-    <section className="comp" aria-labelledby="comp-title">
-      <header className="comp__head">
+    <section className="dashboard" aria-labelledby="comp-title">
+      <header className="dashboard__head">
         <h1 id="comp-title">Painel da empresa</h1>
-        <p className="comp__lead">
+        <p className="dashboard__lead">
           Olá, {user.name}. Gerencie seu perfil e suas vagas inclusivas.
         </p>
       </header>
 
-      <nav className="comp__nav" aria-label="Seções do painel da empresa">
+      <nav className="dashboard__nav" aria-label="Seções do painel da empresa">
         <NavLink end to="/empresa">
           Visão geral
         </NavLink>
@@ -27,7 +27,7 @@ export function CompanyDashboard() {
         <NavLink to="/empresa/vagas">Minhas vagas</NavLink>
       </nav>
 
-      <div className="comp__content">
+      <div>
         <Outlet />
       </div>
     </section>

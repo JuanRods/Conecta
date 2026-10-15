@@ -94,19 +94,19 @@ export function FavoritesPage() {
       <section aria-labelledby="fav-title" className="cand-section">
         <h3 id="fav-title">Vagas favoritas</h3>
         {favorites.length === 0 ? (
-          <p className="cand-muted">
+          <p className="text-muted">
             Você ainda não salvou vagas. Use o botão “Salvar vaga” na busca ou
             no detalhe da vaga.
           </p>
         ) : (
-          <ul className="cand-list">
+          <ul className="card-list">
             {favorites.map((fav) => (
               <li key={fav.jobId}>
-                <article className="cand-card">
-                  <h4 className="cand-card__title">
+                <article className="card">
+                  <h4 className="card__title">
                     <Link to={`/vagas/${fav.jobId}`}>{fav.jobTitle}</Link>
                   </h4>
-                  <p className="cand-card__meta">{fav.companyName}</p>
+                  <p className="card__meta">{fav.companyName}</p>
                   <Button variant="ghost" onClick={() => removeFavorite(fav)}>
                     Remover dos favoritos
                   </Button>
@@ -120,7 +120,7 @@ export function FavoritesPage() {
       {/* --- Alertas --- */}
       <section aria-labelledby="alert-title" className="cand-section">
         <h3 id="alert-title">Alertas de novas vagas</h3>
-        <p className="cand-muted">
+        <p className="text-muted">
           Receba avisos quando surgirem vagas que combinam com seus critérios.
         </p>
 
@@ -150,16 +150,16 @@ export function FavoritesPage() {
               ))}
             </select>
           </div>
-          <div className="cand-actions">
+          <div className="form-actions">
             <Button type="submit">Criar alerta</Button>
           </div>
         </form>
 
         {alerts.length > 0 && (
-          <ul className="cand-list" aria-label="Alertas configurados">
+          <ul className="card-list" aria-label="Alertas configurados">
             {alerts.map((al) => (
               <li key={al.id}>
-                <article className="cand-card cand-card--row">
+                <article className="card card--row">
                   <p>
                     {al.keyword && (
                       <>

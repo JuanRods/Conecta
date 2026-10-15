@@ -5,6 +5,7 @@ import { useAnnouncer } from "../../accessibility/Announcer";
 import { Button } from "../../components/Button";
 import { jobService } from "../../jobs/jobService";
 import {
+  JOB_STATUS_BADGE,
   JOB_STATUS_LABELS,
   MODALITY_LABELS,
   type Job,
@@ -79,35 +80,33 @@ export function CompanyJobsPage() {
       </div>
 
       {jobs.length === 0 ? (
-        <p className="comp-muted">
+        <p className="text-muted">
           Você ainda não criou vagas. Clique em “Nova vaga” para começar — ela
           passará por moderação antes de ficar pública.
         </p>
       ) : (
-        <ul className="comp-list">
+        <ul className="card-list">
           {jobs.map((job) => (
             <li key={job.id}>
               <article
-                className="comp-card"
+                className="card"
                 aria-labelledby={`cjob-${job.id}-title`}
               >
-                <div className="comp-card__top">
-                  <h3 id={`cjob-${job.id}-title`} className="comp-card__title">
+                <div className="card__top">
+                  <h3 id={`cjob-${job.id}-title`} className="card__title">
                     {job.title}
                   </h3>
                   <span
-                    className={
-                      "comp-status comp-status--" + job.status.toLowerCase()
-                    }
+                    className={"badge badge--" + JOB_STATUS_BADGE[job.status]}
                   >
                     {JOB_STATUS_LABELS[job.status]}
                   </span>
                 </div>
-                <p className="comp-card__meta">
+                <p className="card__meta">
                   {job.area} · {MODALITY_LABELS[job.modality]} · {job.location}
                 </p>
 
-                <div className="comp-card__actions">
+                <div className="card__actions">
                   <Link
                     className="btn btn--secondary"
                     to={`/empresa/vagas/${job.id}/editar`}

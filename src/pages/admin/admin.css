@@ -1,0 +1,43 @@
+/**
+ * ESTILOS ESPECÍFICOS DO PAINEL DO ADMINISTRADOR
+ * -----------------------------------------------------------------------------
+ * Elementos genéricos (dashboard, card, stat, badge, callout, texto) vêm da
+ * camada compartilhada em src/styles/elements/. Aqui ficam apenas as peças
+ * exclusivas da moderação (tabela de auditoria e espaçamento de seções).
+ */
+
+.admin-section {
+  margin-top: var(--space-8);
+}
+
+/* --- Tabela de auditoria --- */
+.admin-table-wrap {
+  overflow-x: auto;
+  margin-top: var(--space-4);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.admin-table thead th {
+  background: var(--color-surface-2);
+  font-weight: 700;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}

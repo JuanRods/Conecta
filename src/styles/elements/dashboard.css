@@ -1,0 +1,50 @@
+/**
+ * ELEMENTO: Painel / Dashboard
+ * -----------------------------------------------------------------------------
+ * Casca de painel compartilhada por candidato, empresa e administrador.
+ * Edite aqui para mudar cabeçalho e navegação secundária de TODOS os painéis.
+ */
+
+.dashboard {
+  padding-block: var(--space-6);
+}
+
+.dashboard__head h1 {
+  margin: 0 0 var(--space-2);
+}
+
+.dashboard__lead {
+  color: var(--color-fg-muted);
+  margin: 0 0 var(--space-4);
+}
+
+/* Navegação secundária em abas */
+.dashboard__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+
+.dashboard__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius) var(--radius) 0 0;
+  text-decoration: none;
+  color: var(--color-fg);
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+}
+
+.dashboard__nav a:hover {
+  background: var(--color-surface);
+}
+
+.dashboard__nav a.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 700;
+}

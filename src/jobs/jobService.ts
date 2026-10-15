@@ -330,6 +330,40 @@ export const jobService = {
     saveJobs(all);
     await simulateLatency(null);
   },
+
+  // --- Operações de MODERAÇÃO (Fase 6 — M1), sem checagem de dono ---
+
+  /** Vagas aguardando moderação (status PENDING). */
+  async listPending(): Promise<Job[]> {
+    const pending = loadJobs()
+      .filter((j) => j.status === "PENDING")
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return simulateLatency(pending);
+  },
+
+  /** Aprova uma vaga, tornando-a pública e registrando a publicação (M1.2). */
+  async approve(id: string): Promise<Job> {
+    const all = loadJobs();
+    const idx = all.findIndex((j) => j.id === id);
+    if (idx === -1) throw new Error("Vaga não encontrada.");
+    all[idx] = {
+      ...all[idx],
+      status: "APPROVED",
+      publishedAt: new Date().toISOString(),
+    };
+    saveJobs(all);
+    return simulateLatency(all[idx]);
+  },
+
+  /** Rejeita uma vaga (M1.2). O motivo é registrado na auditoria/notificação. */
+  async reject(id: string): Promise<Job> {
+    const all = loadJobs();
+    const idx = all.findIndex((j) => j.id === id);
+    if (idx === -1) throw new Error("Vaga não encontrada.");
+    all[idx] = { ...all[idx], status: "REJECTED", publishedAt: undefined };
+    saveJobs(all);
+    return simulateLatency(all[idx]);
+  },
 };
 
 export type { AccessibilityFeature };

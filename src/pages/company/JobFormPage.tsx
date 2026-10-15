@@ -197,13 +197,13 @@ export function JobFormPage() {
   return (
     <form onSubmit={handleSubmit} noValidate aria-labelledby="job-form-title">
       <h2 id="job-form-title">{isEditing ? "Editar vaga" : "Nova vaga"}</h2>
-      <p className="comp-muted">
+      <p className="text-muted">
         Toda vaga passa por moderação antes de ficar visível ao público.
       </p>
 
       <FormErrorSummary errors={errors} />
 
-      <fieldset className="comp-fieldset">
+      <fieldset className="form-fieldset">
         <legend>Dados da vaga</legend>
 
         <Field
@@ -238,14 +238,14 @@ export function JobFormPage() {
               {errors.find((er) => er.fieldId === "job-description")?.message}
             </p>
           )}
-          <div className="comp-actions">
+          <div className="form-actions">
             <Button type="button" variant="secondary" onClick={checkLanguage}>
               Verificar linguagem inclusiva
             </Button>
           </div>
         </div>
 
-        <div className="comp-row">
+        <div className="form-row">
           <Field
             id="job-location"
             label="Localização"
@@ -263,7 +263,7 @@ export function JobFormPage() {
           />
         </div>
 
-        <div className="comp-row">
+        <div className="form-row">
           <div className="field">
             <label className="field__label" htmlFor="job-modality">
               Modalidade
@@ -301,11 +301,11 @@ export function JobFormPage() {
           </div>
         </div>
 
-        <fieldset className="comp-features">
+        <fieldset className="form-group">
           <legend>Recursos de acessibilidade da vaga</legend>
-          <div className="comp-checks">
+          <div className="choice-grid">
             {FEATURES.map((f) => (
-              <label key={f} className="comp-check">
+              <label key={f} className="choice">
                 <input
                   type="checkbox"
                   checked={form.accessibilityFeatures.includes(f)}
@@ -323,7 +323,7 @@ export function JobFormPage() {
         <h3 id="assist-title">Assistente de descrição inclusiva</h3>
         <div aria-live="polite">
           {findings.length === 0 ? (
-            <p className="comp-muted">
+            <p className="text-muted">
               Clique em “Verificar linguagem inclusiva” para analisar a descrição.
               Dicas abaixo ajudam a escrever de forma acolhedora.
             </p>
@@ -347,7 +347,7 @@ export function JobFormPage() {
         </details>
       </section>
 
-      <div className="comp-actions">
+      <div className="form-actions">
         <Button type="submit" disabled={saving}>
           {saving
             ? "Salvando…"

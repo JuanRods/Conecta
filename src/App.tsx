@@ -15,10 +15,16 @@ import { CompanyProfilePage } from "./pages/company/CompanyProfilePage";
 import { CompanyJobsPage } from "./pages/company/CompanyJobsPage";
 import { JobFormPage } from "./pages/company/JobFormPage";
 import { JobApplicationsPage } from "./pages/company/JobApplicationsPage";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminOverview } from "./pages/admin/AdminOverview";
+import { ModerationQueuePage } from "./pages/admin/ModerationQueuePage";
+import { ReportsPage } from "./pages/admin/ReportsPage";
+import { AccountsPage } from "./pages/admin/AccountsPage";
+import { AuditPage } from "./pages/admin/AuditPage";
+import { MetricsPage } from "./pages/admin/MetricsPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { RequireAuth } from "./auth/RequireAuth";
 
 const router = createBrowserRouter([
@@ -68,22 +74,30 @@ const router = createBrowserRouter([
         path: "admin",
         element: (
           <RequireAuth roles={["ADMIN"]}>
-            <DashboardPage />
+            <AdminDashboard />
           </RequireAuth>
         ),
+        children: [
+          { index: true, element: <AdminOverview /> },
+          { path: "moderacao", element: <ModerationQueuePage /> },
+          { path: "denuncias", element: <ReportsPage /> },
+          { path: "contas", element: <AccountsPage /> },
+          { path: "auditoria", element: <AuditPage /> },
+          { path: "metricas", element: <MetricsPage /> },
+        ],
       },
 
       // --- Área pública: busca e detalhe de vagas (Fase 3) ---
       { path: "vagas", element: <JobsPage /> },
       { path: "vagas/:id", element: <JobDetailPage /> },
 
-      // --- Áreas públicas das próximas fases ---
+      // --- Página institucional pública para empresas ---
       {
         path: "para-empresas",
         element: (
           <PlaceholderPage
             title="Para empresas"
-            phase="Fase 5 — Perfil empresa"
+            phase="Crie sua conta de empresa para publicar vagas inclusivas."
           />
         ),
       },

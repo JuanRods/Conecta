@@ -1,0 +1,15 @@
+/**
+ * CAMADA DE ELEMENTOS (design system)
+ * -----------------------------------------------------------------------------
+ * Estilos reutilizáveis, organizados UM ARQUIVO POR ELEMENTO, para facilitar a
+ * edição do design. Cada painel/página compõe estes elementos em vez de repetir
+ * regras. Para ajustar um elemento em todo o app, edite o arquivo correspondente.
+ */
+
+@import "./text.css";
+@import "./dashboard.css";
+@import "./card.css";
+@import "./badge.css";
+@import "./stat.css";
+@import "./callout.css";
+@import "./form-layout.css";
