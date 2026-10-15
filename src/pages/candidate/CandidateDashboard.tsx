@@ -29,6 +29,7 @@ export function CandidateDashboard() {
         <NavLink to="/painel/perfil">Meu perfil</NavLink>
         <NavLink to="/painel/candidaturas">Minhas candidaturas</NavLink>
         <NavLink to="/painel/favoritos">Favoritos e alertas</NavLink>
+        <NavLink to="/painel/privacidade">Privacidade</NavLink>
       </nav>
 
       <div>

@@ -5,6 +5,12 @@ dist-ssr
 *.local
 .DS_Store
 coverage
+
+# Playwright (E2E)
+test-results
+playwright-report
+.playwright
+blob-report
 .env
 .env.*
 !.env.example

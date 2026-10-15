@@ -156,6 +156,23 @@ export const applicationService = {
     return simulateLatency(load<Notification>(notifKey(candidateId)));
   },
 
+  /**
+   * Apaga TODOS os dados do candidato: candidaturas, favoritos, alertas e
+   * notificações (direito à exclusão — LGPD/NF2).
+   */
+  async purgeCandidate(candidateId: string): Promise<void> {
+    save(
+      APPLICATIONS_KEY,
+      load<Application>(APPLICATIONS_KEY).filter(
+        (a) => a.candidateId !== candidateId,
+      ),
+    );
+    localStorage.removeItem(favKey(candidateId));
+    localStorage.removeItem(alertKey(candidateId));
+    localStorage.removeItem(notifKey(candidateId));
+    await simulateLatency(null);
+  },
+
   // --- Favoritos (C2.4) ---
 
   async listFavorites(candidateId: string): Promise<Favorite[]> {

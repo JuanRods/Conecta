@@ -4,6 +4,7 @@ import { AccessibilityControls } from "./AccessibilityControls";
 import { Button } from "./Button";
 import { useAuth, dashboardPathForRole } from "../auth/AuthContext";
 import { useAnnouncer } from "../accessibility/Announcer";
+import { VLibras } from "../accessibility/VLibras";
 import "./Layout.css";
 
 /**
@@ -83,6 +84,9 @@ export function Layout() {
           </p>
         </div>
       </footer>
+
+      {/* Widget de tradução para Libras (NF6) */}
+      <VLibras />
     </>
   );
 }
