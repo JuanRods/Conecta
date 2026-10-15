@@ -10,7 +10,13 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "api": "npm --prefix server run start",
+    "api:install": "npm --prefix server install",
+    "db:reset": "npm --prefix server run db:reset",
+    "db:migrate": "npm --prefix server run db:migrate",
+    "db:seed": "npm --prefix server run db:seed",
+    "test:api": "npm --prefix server test"
   },
   "dependencies": {
     "react": "^18.3.1",

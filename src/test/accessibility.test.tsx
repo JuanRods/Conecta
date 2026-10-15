@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { describe, it, expect, beforeEach } from "vitest";
@@ -8,7 +8,6 @@ import { AnnouncerProvider } from "../accessibility/Announcer";
 import { GuidedTourProvider } from "../accessibility/GuidedTour";
 import { AuthProvider } from "../auth/AuthContext";
 import { Layout } from "../components/Layout";
-import { HomePage } from "../pages/HomePage";
 
 function renderApp() {
   return render(
@@ -26,19 +25,6 @@ function renderApp() {
   );
 }
 
-function renderHome() {
-  return render(
-    <PreferencesProvider>
-      <AnnouncerProvider>
-        <GuidedTourProvider>
-          <MemoryRouter>
-            <HomePage />
-          </MemoryRouter>
-        </GuidedTourProvider>
-      </AnnouncerProvider>
-    </PreferencesProvider>,
-  );
-}
 
 describe("Base de acessibilidade", () => {
   beforeEach(() => {
@@ -82,14 +68,56 @@ describe("Base de acessibilidade", () => {
     expect(Number(scale)).toBeGreaterThan(1);
   });
 
-  it("inicia a navegação guiada e exibe o primeiro passo", async () => {
+  it("oferece a navegação guiada ao entrar na tela, com opção de não exibir novamente", async () => {
+    renderApp();
+    const invite = await screen.findByRole("dialog", {
+      name: /quer um guia desta tela/i,
+    });
+    // O convite NÃO é modal: oferecer o guia não deve prender o foco nem
+    // bloquear a leitura da tela.
+    expect(invite).not.toHaveAttribute("aria-modal", "true");
+    expect(
+      screen.getByRole("checkbox", { name: /não exibir novamente/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^iniciar navegação guiada$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^cancelar$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('"não exibir novamente" impede que o convite reapareça', async () => {
     const user = userEvent.setup();
-    renderHome();
+    const first = renderApp();
+    await screen.findByRole("dialog", { name: /quer um guia desta tela/i });
+
     await user.click(
-      screen.getByRole("button", { name: /iniciar navegação guiada/i }),
+      screen.getByRole("checkbox", { name: /não exibir novamente/i }),
     );
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText(/passo 1 de/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^cancelar$/i }));
+    first.unmount();
+
+    // Nova visita à mesma tela: o convite não deve mais aparecer…
+    renderApp();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: /quer um guia desta tela/i }),
+      ).not.toBeInTheDocument(),
+    );
+    // …mas o ícone continua disponível.
+    expect(
+      screen.getByRole("button", { name: /iniciar navegação guiada da tela/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("o ícone global inicia a navegação guiada e exibe o primeiro passo", async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await user.click(
+      screen.getByRole("button", { name: /iniciar navegação guiada da tela/i }),
+    );
+    expect(await screen.findByText(/passo 1 de/i)).toBeInTheDocument();
   });
 });

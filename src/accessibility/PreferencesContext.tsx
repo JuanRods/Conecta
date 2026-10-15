@@ -9,8 +9,12 @@ import {
 
 /**
  * Gerencia as preferências de acessibilidade e apresentação do usuário:
- * tema (A4), alto contraste e escala de fonte (A6), redução de movimento (A6).
+ * tema (A4), alto contraste e escala de fonte (A6).
  * As escolhas são persistidas em localStorage e refletidas em atributos no <html>.
+ *
+ * NOTA: a redução de movimento NÃO é uma preferência alternável na interface.
+ * Ela é aplicada automaticamente via `@media (prefers-reduced-motion: reduce)`
+ * em `styles/global.css`, respeitando a configuração do sistema (A6).
  */
 
 export type Theme = "light" | "dark";
@@ -20,7 +24,6 @@ interface Preferences {
   theme: Theme;
   contrast: Contrast;
   fontScale: number; // 1 = 100%
-  reducedMotion: boolean;
 }
 
 interface PreferencesContextValue extends Preferences {
@@ -30,7 +33,6 @@ interface PreferencesContextValue extends Preferences {
   increaseFont: () => void;
   decreaseFont: () => void;
   resetFont: () => void;
-  toggleReducedMotion: () => void;
 }
 
 const STORAGE_KEY = "conecta.prefs";
@@ -45,11 +47,6 @@ function getSystemTheme(): Theme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
-}
-
-function getSystemReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function loadStored(): Partial<Preferences> {
@@ -72,34 +69,29 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     stored.contrast ?? "normal",
   );
   const [fontScale, setFontScale] = useState<number>(stored.fontScale ?? 1);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(
-    stored.reducedMotion ?? getSystemReducedMotion(),
-  );
 
   // Aplica as preferências ao documento e persiste
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
     root.setAttribute("data-contrast", contrast === "high" ? "high" : "normal");
-    root.setAttribute("data-reduced-motion", String(reducedMotion));
     root.style.setProperty("--font-scale", String(fontScale));
 
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ theme, contrast, fontScale, reducedMotion }),
+        JSON.stringify({ theme, contrast, fontScale }),
       );
     } catch {
       /* armazenamento indisponível — segue sem persistir */
     }
-  }, [theme, contrast, fontScale, reducedMotion]);
+  }, [theme, contrast, fontScale]);
 
   const value = useMemo<PreferencesContextValue>(
     () => ({
       theme,
       contrast,
       fontScale,
-      reducedMotion,
       setTheme: setThemeState,
       toggleTheme: () =>
         setThemeState((t) => (t === "light" ? "dark" : "light")),
@@ -110,9 +102,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       decreaseFont: () =>
         setFontScale((s) => Math.max(FONT_MIN, +(s - FONT_STEP).toFixed(2))),
       resetFont: () => setFontScale(1),
-      toggleReducedMotion: () => setReducedMotion((m) => !m),
     }),
-    [theme, contrast, fontScale, reducedMotion],
+    [theme, contrast, fontScale],
   );
 
   return (

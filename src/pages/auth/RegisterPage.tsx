@@ -1,10 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth, dashboardPathForRole } from "../../auth/AuthContext";
 import { AuthError } from "../../auth/types";
 import { passwordRules } from "../../auth/passwordPolicy";
 import { useAnnouncer } from "../../accessibility/Announcer";
-import { useGuidedTour } from "../../accessibility/GuidedTour";
 import { Field } from "../../components/Field";
 import { Button } from "../../components/Button";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
@@ -16,7 +15,6 @@ type AccountType = "candidate" | "company";
 export function RegisterPage() {
   const { register } = useAuth();
   const { announce } = useAnnouncer();
-  const { startTour, isTourCompleted } = useGuidedTour();
   const navigate = useNavigate();
 
   const [accountType, setAccountType] = useState<AccountType>("candidate");
@@ -28,33 +26,6 @@ export function RegisterPage() {
   );
   const [submitting, setSubmitting] = useState(false);
 
-  // Inicia o tour guiado do cadastro na primeira visita (A5.5).
-  useEffect(() => {
-    if (isTourCompleted("cadastro")) return;
-    startTour({
-      id: "cadastro",
-      steps: [
-        {
-          target: "#account-type-group",
-          title: "Escolha o tipo de conta",
-          description:
-            'Selecione "Candidato" se você procura emprego, ou "Empresa" se você quer publicar vagas.',
-        },
-        {
-          target: "#register-password",
-          title: "Crie uma senha forte",
-          description:
-            "Conforme você digita, a lista abaixo do campo mostra quais requisitos de segurança já foram atendidos.",
-        },
-        {
-          target: "#register-submit",
-          title: "Finalize o cadastro",
-          description:
-            "Ao enviar, você será levado(a) ao painel correspondente ao seu perfil.",
-        },
-      ],
-    });
-  }, [startTour, isTourCompleted]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

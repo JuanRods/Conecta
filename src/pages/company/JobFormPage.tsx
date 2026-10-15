@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useAnnouncer } from "../../accessibility/Announcer";
-import { useGuidedTour } from "../../accessibility/GuidedTour";
 import { Field } from "../../components/Field";
 import { Button } from "../../components/Button";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
@@ -52,7 +51,6 @@ export function JobFormPage() {
   const isEditing = Boolean(id);
   const { user } = useAuth();
   const { announce } = useAnnouncer();
-  const { startTour, isTourCompleted } = useGuidedTour();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<JobForm>(EMPTY);
@@ -92,40 +90,6 @@ export function JobFormPage() {
     };
   }, [user, id, isEditing]);
 
-  // Tour guiado de publicação de vaga na primeira criação (A5.7).
-  useEffect(() => {
-    if (isEditing || loading) return;
-    if (isTourCompleted("publicar-vaga")) return;
-    startTour({
-      id: "publicar-vaga",
-      steps: [
-        {
-          target: "#job-title",
-          title: "Dê um título claro",
-          description:
-            "Descreva o cargo de forma objetiva e inclusiva (ex.: Pessoa Desenvolvedora Front-end).",
-        },
-        {
-          target: "#job-description",
-          title: "Detalhe a vaga",
-          description:
-            "Explique responsabilidades e requisitos essenciais. Depois use o verificador de linguagem inclusiva.",
-        },
-        {
-          target: "#assist-title",
-          title: "Assistente de linguagem inclusiva",
-          description:
-            "Verifique termos a evitar e siga as dicas para uma descrição acolhedora.",
-        },
-        {
-          target: "#job-form-title",
-          title: "Envio à moderação",
-          description:
-            "Ao salvar, a vaga vai para a moderação e fica pública somente após aprovação.",
-        },
-      ],
-    });
-  }, [isEditing, loading, startTour, isTourCompleted]);
 
   function update<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));

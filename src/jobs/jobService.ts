@@ -4,6 +4,7 @@ import type {
   JobFilters,
   JobStatus,
 } from "./types";
+import { api, apiEnabled, jobSearchQuery } from "../api/client";
 
 /**
  * Serviço de vagas (Fase 3).
@@ -190,6 +191,7 @@ export const jobService = {
    * ordenadas da mais recente para a mais antiga (por publishedAt/createdAt).
    */
   async search(filters: JobFilters = {}): Promise<Job[]> {
+    if (apiEnabled()) return api.get<Job[]>(`/jobs${jobSearchQuery(filters)}`);
     const results = loadJobs()
       .filter((j) => j.status === "APPROVED")
       .filter((j) => matchesFilters(j, filters))
@@ -206,12 +208,16 @@ export const jobService = {
    * evitando vazamento de vagas em moderação por URL direta.
    */
   async getById(id: string): Promise<Job | null> {
+    if (apiEnabled()) {
+      return api.get<Job>(`/jobs/${id}`).catch(() => null);
+    }
     const job = loadJobs().find((j) => j.id === id && j.status === "APPROVED");
     return simulateLatency(job ?? null);
   },
 
   /** Áreas distintas das vagas aprovadas — alimenta o filtro de área. */
   async listAreas(): Promise<string[]> {
+    if (apiEnabled()) return api.get<string[]>("/jobs/areas");
     const areas = new Set(
       loadJobs()
         .filter((j) => j.status === "APPROVED")
@@ -226,6 +232,9 @@ export const jobService = {
 
   /** Lista todas as vagas de uma empresa (qualquer status), mais recentes antes. */
   async listByCompany(companyId: string): Promise<Job[]> {
+    if (apiEnabled()) {
+      return api.get<Job[]>(`/companies/${companyId}/jobs`);
+    }
     const jobs = loadJobs()
       .filter((j) => j.companyId === companyId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -234,6 +243,12 @@ export const jobService = {
 
   /** Detalhe para a empresa dona da vaga — independe do status. */
   async getOwnedById(companyId: string, id: string): Promise<Job | null> {
+    if (apiEnabled()) {
+      const owned = await api
+        .get<Job[]>(`/companies/${companyId}/jobs`)
+        .catch(() => [] as Job[]);
+      return owned.find((j) => j.id === id) ?? null;
+    }
     const job = loadJobs().find(
       (j) => j.id === id && j.companyId === companyId,
     );
@@ -247,6 +262,7 @@ export const jobService = {
   async create(
     input: Omit<Job, "id" | "status" | "createdAt" | "publishedAt">,
   ): Promise<Job> {
+    if (apiEnabled()) return api.post<Job>("/jobs", input);
     const all = loadJobs();
     const job: Job = {
       ...input,
@@ -268,6 +284,9 @@ export const jobService = {
     id: string,
     patch: Partial<Omit<Job, "id" | "companyId" | "status" | "createdAt">>,
   ): Promise<Job> {
+    if (apiEnabled()) {
+      return api.patch<Job>(`/jobs/${id}`, { companyId, ...patch });
+    }
     const all = loadJobs();
     const idx = all.findIndex((j) => j.id === id && j.companyId === companyId);
     if (idx === -1) throw new Error("Vaga não encontrada.");
@@ -291,6 +310,9 @@ export const jobService = {
     id: string,
     status: JobStatus,
   ): Promise<Job> {
+    if (apiEnabled()) {
+      return api.patch<Job>(`/jobs/${id}/status`, { companyId, status });
+    }
     const all = loadJobs();
     const idx = all.findIndex((j) => j.id === id && j.companyId === companyId);
     if (idx === -1) throw new Error("Vaga não encontrada.");
@@ -324,6 +346,10 @@ export const jobService = {
 
   /** Remove uma vaga da empresa. */
   async remove(companyId: string, id: string): Promise<void> {
+    if (apiEnabled()) {
+      await api.patch(`/jobs/${id}/status`, { companyId, status: "CLOSED" });
+      return;
+    }
     const all = loadJobs().filter(
       (j) => !(j.id === id && j.companyId === companyId),
     );
@@ -335,6 +361,10 @@ export const jobService = {
 
   /** Vagas aguardando moderação (status PENDING). */
   async listPending(): Promise<Job[]> {
+    if (apiEnabled()) {
+      const queue = await api.get<{ jobs: Job[] }>("/admin/moderation/queue");
+      return queue.jobs;
+    }
     const pending = loadJobs()
       .filter((j) => j.status === "PENDING")
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -343,6 +373,9 @@ export const jobService = {
 
   /** Aprova uma vaga, tornando-a pública e registrando a publicação (M1.2). */
   async approve(id: string): Promise<Job> {
+    if (apiEnabled()) {
+      return api.patch<Job>(`/admin/jobs/${id}/review`, { action: "approve" });
+    }
     const all = loadJobs();
     const idx = all.findIndex((j) => j.id === id);
     if (idx === -1) throw new Error("Vaga não encontrada.");
@@ -357,6 +390,9 @@ export const jobService = {
 
   /** Rejeita uma vaga (M1.2). O motivo é registrado na auditoria/notificação. */
   async reject(id: string): Promise<Job> {
+    if (apiEnabled()) {
+      return api.patch<Job>(`/admin/jobs/${id}/review`, { action: "reject" });
+    }
     const all = loadJobs();
     const idx = all.findIndex((j) => j.id === id);
     if (idx === -1) throw new Error("Vaga não encontrada.");

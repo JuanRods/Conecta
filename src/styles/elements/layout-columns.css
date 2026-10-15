@@ -1,0 +1,55 @@
+/**
+ * ELEMENTO: Layout de colunas (feed)
+ * -----------------------------------------------------------------------------
+ * Grade de 3 colunas no estilo de redes profissionais: perfil à esquerda,
+ * conteúdo central (feed) e barra lateral à direita.
+ *
+ * Responsivo (NF4): em telas médias vira 2 colunas e, no mobile, 1 coluna —
+ * sem rolagem horizontal. A ordem do DOM é a ordem de leitura lógica
+ * (perfil → feed → lateral), preservada por leitores de tela.
+ */
+
+.cols-3 {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr) 19rem;
+  gap: var(--space-6);
+  align-items: start;
+  padding-block: var(--space-6);
+}
+
+/* Colunas laterais "grudam" ao rolar, em telas largas */
+.cols-3__side {
+  position: sticky;
+  top: var(--space-4);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cols-3__main {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0; /* evita overflow de conteúdo longo */
+}
+
+@media (max-width: 1080px) {
+  .cols-3 {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+
+  /* A barra lateral direita passa a ocupar a largura total, abaixo */
+  .cols-3__side--right {
+    grid-column: 1 / -1;
+    position: static;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .cols-3__side {
+    position: static;
+  }
+}

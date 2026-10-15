@@ -2,6 +2,10 @@ node_modules
 dist
 dist-ssr
 *.tsbuildinfo
+
+# PostgreSQL local de desenvolvimento (binários e cluster)
+.conecta-pgsql
+.pgsql
 *.local
 .DS_Store
 coverage
@@ -14,3 +18,8 @@ blob-report
 .env
 .env.*
 !.env.example
+
+# Artefatos locais (verificação em navegador, logs de dev)
+.browserhome
+.logs
+.kiro/artifacts

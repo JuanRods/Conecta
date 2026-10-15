@@ -6,6 +6,7 @@ import type {
   JobAlert,
   Notification,
 } from "./types";
+import { api, apiEnabled, ApiError } from "../api/client";
 
 /**
  * Serviço de candidaturas, favoritos e alertas (Fase 4 — C2).
@@ -59,6 +60,11 @@ export const applicationService = {
   // --- Candidaturas (C2.2, C2.3) ---
 
   async listByCandidate(candidateId: string): Promise<Application[]> {
+    if (apiEnabled()) {
+      return api.get<Application[]>(
+        `/candidates/${candidateId}/applications`,
+      );
+    }
     const apps = load<Application>(APPLICATIONS_KEY)
       .filter((a) => a.candidateId === candidateId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -66,6 +72,10 @@ export const applicationService = {
   },
 
   async hasApplied(candidateId: string, jobId: string): Promise<boolean> {
+    if (apiEnabled()) {
+      const list = await this.listByCandidate(candidateId);
+      return list.some((a) => a.jobId === jobId);
+    }
     const applied = load<Application>(APPLICATIONS_KEY).some(
       (a) => a.candidateId === candidateId && a.jobId === jobId,
     );
@@ -81,6 +91,20 @@ export const applicationService = {
     job: Pick<Job, "id" | "title" | "companyName">,
     sharedAccommodations?: AccessibilityFeature[],
   ): Promise<Application> {
+    if (apiEnabled()) {
+      try {
+        return await api.post<Application>("/applications", {
+          candidateId,
+          jobId: job.id,
+          sharedAccommodations,
+        });
+      } catch (err) {
+        if (err instanceof ApiError && err.code === "ALREADY_APPLIED") {
+          throw new ApplicationError("ALREADY_APPLIED", err.message);
+        }
+        throw err;
+      }
+    }
     const all = load<Application>(APPLICATIONS_KEY);
     if (all.some((a) => a.candidateId === candidateId && a.jobId === job.id)) {
       throw new ApplicationError(
@@ -107,6 +131,10 @@ export const applicationService = {
   },
 
   async withdraw(candidateId: string, applicationId: string): Promise<void> {
+    if (apiEnabled()) {
+      await api.del(`/applications/${applicationId}`);
+      return;
+    }
     const all = load<Application>(APPLICATIONS_KEY).filter(
       (a) => !(a.id === applicationId && a.candidateId === candidateId),
     );
@@ -122,6 +150,9 @@ export const applicationService = {
    * caso contrário o campo já vem ausente da própria candidatura.
    */
   async listByJob(jobId: string): Promise<Application[]> {
+    if (apiEnabled()) {
+      return api.get<Application[]>(`/jobs/${jobId}/applications`);
+    }
     const apps = load<Application>(APPLICATIONS_KEY)
       .filter((a) => a.jobId === jobId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -136,6 +167,11 @@ export const applicationService = {
     applicationId: string,
     status: ApplicationStatus,
   ): Promise<Application> {
+    if (apiEnabled()) {
+      return api.patch<Application>(`/applications/${applicationId}/status`, {
+        status,
+      });
+    }
     const all = load<Application>(APPLICATIONS_KEY);
     const idx = all.findIndex((a) => a.id === applicationId);
     if (idx === -1) throw new Error("Candidatura não encontrada.");

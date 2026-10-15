@@ -1,0 +1,140 @@
+/**
+ * ELEMENTO: Lançador da Navegação Guiada (ícone flutuante + convite)
+ * -----------------------------------------------------------------------------
+ * O ícone fica fixo no canto inferior ESQUERDO, para não colidir com o widget
+ * do VLibras (canto direito). Alvo de toque >= 44px (WCAG 2.5.5).
+ */
+
+.tour-fab {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 900;
+
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+
+  min-width: 56px;
+  min-height: 56px;
+  padding: var(--space-2);
+
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.tour-fab:hover {
+  transform: scale(1.06);
+}
+
+.tour-fab__icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.tour-fab__text {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- Convite de entrada na tela ---
+ * NÃO é modal de propósito: oferecer o guia não deve bloquear a leitura nem
+ * prender o foco. Fica ancorado acima do ícone, no canto inferior esquerdo,
+ * fora do fluxo do conteúdo principal.
+ */
+
+.tour-invite {
+  position: fixed;
+  z-index: 901;
+  left: var(--space-4);
+  bottom: calc(56px + var(--space-6));
+
+  width: min(calc(100vw - 2 * var(--space-4)), 22rem);
+  padding: var(--space-4) var(--space-6);
+
+  background: var(--color-bg);
+  color: var(--color-fg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.tour-invite__title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.2rem;
+}
+
+.tour-invite__desc {
+  margin: 0 0 var(--space-4);
+  color: var(--color-fg-muted);
+}
+
+.tour-invite__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+}
+
+.tour-invite__check input {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.tour-invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.tour-invite__btn {
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tour-invite__btn--primary {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  border-color: var(--color-primary);
+}
+
+.tour-invite__hint {
+  margin: var(--space-4) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-fg-muted);
+}
+
+/* Em telas estreitas o ícone encolhe um pouco para não cobrir conteúdo */
+@media (max-width: 480px) {
+  .tour-fab {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .tour-fab__text {
+    display: none;
+  }
+}

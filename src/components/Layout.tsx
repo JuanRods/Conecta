@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { useAuth, dashboardPathForRole } from "../auth/AuthContext";
 import { useAnnouncer } from "../accessibility/Announcer";
 import { VLibras } from "../accessibility/VLibras";
+import { TourLauncher } from "../accessibility/TourLauncher";
 import "./Layout.css";
 
 /**
@@ -84,6 +85,9 @@ export function Layout() {
           </p>
         </div>
       </footer>
+
+      {/* Ícone global da Navegação Guiada (A5) — presente em todas as telas */}
+      <TourLauncher />
 
       {/* Widget de tradução para Libras (NF6) */}
       <VLibras />

@@ -5,6 +5,10 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  preview: {
+    host: "127.0.0.1",
+    port: 5173,
+  },
   test: {
     globals: true,
     environment: "jsdom",
@@ -13,5 +17,11 @@ export default defineConfig({
     // Testes unitários/a11y ficam em src/; os E2E (Playwright) ficam em e2e/.
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["e2e/**", "node_modules/**"],
+    // Os testes de UI rodam no modo OFFLINE (localStorage): garantimos que
+    // VITE_API_URL fique vazio aqui, independentemente de um .env.local presente
+    // para o desenvolvimento com a API/PostgreSQL.
+    env: {
+      VITE_API_URL: "",
+    },
   },
 });

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useAnnouncer } from "../../accessibility/Announcer";
-import { useGuidedTour } from "../../accessibility/GuidedTour";
 import { Field } from "../../components/Field";
 import { Button } from "../../components/Button";
 import { FormErrorSummary } from "../../components/FormErrorSummary";
@@ -30,7 +29,6 @@ const FEATURES = Object.keys(FEATURE_LABELS) as AccessibilityFeature[];
 export function ProfilePage() {
   const { user } = useAuth();
   const { announce } = useAnnouncer();
-  const { startTour, isTourCompleted } = useGuidedTour();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
@@ -54,40 +52,6 @@ export function ProfilePage() {
     };
   }, [user]);
 
-  // Tour guiado do perfil na primeira visita (A5).
-  useEffect(() => {
-    if (!profile) return;
-    if (isTourCompleted("perfil-candidato")) return;
-    startTour({
-      id: "perfil-candidato",
-      steps: [
-        {
-          target: "#perfil-profissional",
-          title: "Dados profissionais",
-          description:
-            "Preencha experiência, formação e habilidades. Isso ajuda empresas a encontrarem você.",
-        },
-        {
-          target: "#perfil-sensivel",
-          title: "Informações opcionais e sigilosas",
-          description:
-            "Tipo de deficiência e acomodações são opcionais, criptografados e só compartilhados com seu consentimento.",
-        },
-        {
-          target: "#perfil-curriculo",
-          title: "Currículo acessível",
-          description:
-            "Anexe seu currículo em PDF ou Word. Prefira PDFs com marcação (tags) para leitores de tela.",
-        },
-        {
-          target: "#perfil-visibilidade",
-          title: "Controle de visibilidade",
-          description:
-            "Você decide quem vê seu perfil: público, apenas empresas das vagas em que se candidatou, ou privado.",
-        },
-      ],
-    });
-  }, [profile, startTour, isTourCompleted]);
 
   if (!profile) {
     return <p aria-live="polite">Carregando seu perfil…</p>;

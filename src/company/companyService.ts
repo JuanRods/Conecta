@@ -1,4 +1,5 @@
 import type { Company } from "./types";
+import { api, apiEnabled } from "../api/client";
 
 /**
  * Serviço de perfil da empresa (Fase 5 — E1).
@@ -59,11 +60,23 @@ export function formatCnpj(cnpj: string): string {
 
 export const companyService = {
   async get(userId: string): Promise<Company> {
+    if (apiEnabled()) {
+      const remote = await api
+        .get<Company>(`/companies/${userId}`)
+        .catch(() => null);
+      return remote ?? emptyCompany(userId);
+    }
     const found = loadAll().find((c) => c.userId === userId);
     return simulateLatency(found ?? emptyCompany(userId));
   },
 
   async exists(userId: string): Promise<boolean> {
+    if (apiEnabled()) {
+      const remote = await api
+        .get<Company>(`/companies/${userId}`)
+        .catch(() => null);
+      return remote !== null && remote.name.trim().length > 0;
+    }
     return simulateLatency(loadAll().some((c) => c.userId === userId));
   },
 
@@ -73,6 +86,9 @@ export const companyService = {
    * da moderação, Fase 6).
    */
   async save(company: Company): Promise<Company> {
+    if (apiEnabled()) {
+      return api.put<Company>(`/companies/${company.userId}`, company);
+    }
     const all = loadAll();
     const existing = all.find((c) => c.userId === company.userId);
     const next: Company = {
@@ -89,6 +105,12 @@ export const companyService = {
 
   /** Empresas aguardando verificação. */
   async listPendingVerification(): Promise<Company[]> {
+    if (apiEnabled()) {
+      const queue = await api.get<{ companies: Company[] }>(
+        "/admin/moderation/queue",
+      );
+      return queue.companies;
+    }
     return simulateLatency(
       loadAll().filter((c) => c.verificationStatus === "PENDING"),
     );
@@ -99,6 +121,9 @@ export const companyService = {
     userId: string,
     status: Company["verificationStatus"],
   ): Promise<Company> {
+    if (apiEnabled()) {
+      return api.patch<Company>(`/admin/companies/${userId}/verify`, { status });
+    }
     const all = loadAll();
     const idx = all.findIndex((c) => c.userId === userId);
     if (idx === -1) throw new Error("Empresa não encontrada.");
