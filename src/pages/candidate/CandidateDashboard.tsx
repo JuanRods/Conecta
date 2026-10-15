@@ -11,13 +11,18 @@ export function CandidateDashboard() {
   if (!user) return null;
 
   return (
-    <section className="cand" aria-labelledby="cand-title">
-      <header className="cand__head">
+    <section className="dashboard" aria-labelledby="cand-title">
+      <header className="dashboard__head">
         <h1 id="cand-title">Painel do candidato</h1>
-        <p className="cand__lead">Olá, {user.name}. Gerencie sua procura por emprego.</p>
+        <p className="dashboard__lead">
+          Olá, {user.name}. Gerencie sua procura por emprego.
+        </p>
       </header>
 
-      <nav className="cand__nav" aria-label="Seções do painel do candidato">
+      <nav
+        className="dashboard__nav"
+        aria-label="Seções do painel do candidato"
+      >
         <NavLink end to="/painel">
           Visão geral
         </NavLink>
@@ -26,7 +31,7 @@ export function CandidateDashboard() {
         <NavLink to="/painel/favoritos">Favoritos e alertas</NavLink>
       </nav>
 
-      <div className="cand__content">
+      <div>
         <Outlet />
       </div>
     </section>

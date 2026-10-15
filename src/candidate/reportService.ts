@@ -60,4 +60,17 @@ export const reportService = {
   async listPending(): Promise<Report[]> {
     return simulateLatency(load().filter((r) => r.status === "PENDING"));
   },
+
+  /** Marca uma denúncia como analisada/arquivada (M2.1). */
+  async setStatus(
+    reportId: string,
+    status: Report["status"],
+  ): Promise<Report> {
+    const all = load();
+    const idx = all.findIndex((r) => r.id === reportId);
+    if (idx === -1) throw new Error("Denúncia não encontrada.");
+    all[idx] = { ...all[idx], status };
+    localStorage.setItem(REPORTS_KEY, JSON.stringify(all));
+    return simulateLatency(all[idx]);
+  },
 };

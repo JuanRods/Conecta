@@ -43,6 +43,22 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   CLOSED: "Encerrada",
 };
 
+/**
+ * Mapeia o status da vaga para o modificador do elemento `.badge`
+ * (success/warning/error/neutral) — ver src/styles/elements/badge.css.
+ */
+export const JOB_STATUS_BADGE: Record<
+  JobStatus,
+  "success" | "warning" | "error" | "neutral"
+> = {
+  DRAFT: "neutral",
+  PENDING: "warning",
+  APPROVED: "success",
+  REJECTED: "error",
+  PAUSED: "neutral",
+  CLOSED: "error",
+};
+
 export interface Job {
   id: string;
   companyId: string;

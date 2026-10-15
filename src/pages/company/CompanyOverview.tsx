@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { companyService } from "../../company/companyService";
 import { jobService } from "../../jobs/jobService";
 import {
+  VERIFICATION_BADGE,
   VERIFICATION_LABELS,
   type VerificationStatus,
 } from "../../company/types";
@@ -41,37 +42,35 @@ export function CompanyOverview() {
   return (
     <div>
       {!hasProfile ? (
-        <div className="comp-callout" role="note">
+        <div className="callout callout--warning" role="note">
           <p>
             Complete o perfil da sua empresa para transmitir confiança e começar
             a publicar vagas.
           </p>
-          <Link className="comp-callout__link" to="/empresa/perfil">
+          <Link className="callout__link" to="/empresa/perfil">
             Completar perfil da empresa
           </Link>
         </div>
       ) : (
         <p
-          className={
-            "comp-badge comp-badge--" + verification.toLowerCase()
-          }
+          className={"badge badge--" + VERIFICATION_BADGE[verification]}
           role="status"
         >
           {VERIFICATION_LABELS[verification]}
         </p>
       )}
 
-      <ul className="comp-stats" aria-label="Resumo das suas vagas">
-        <li className="comp-stat">
-          <span className="comp-stat__num">{counts.total}</span>
+      <ul className="stats" aria-label="Resumo das suas vagas">
+        <li className="stat">
+          <span className="stat__num">{counts.total}</span>
           <Link to="/empresa/vagas">Vagas no total</Link>
         </li>
-        <li className="comp-stat">
-          <span className="comp-stat__num">{counts.published}</span>
+        <li className="stat">
+          <span className="stat__num">{counts.published}</span>
           <span>Publicadas</span>
         </li>
-        <li className="comp-stat">
-          <span className="comp-stat__num">{counts.pending}</span>
+        <li className="stat">
+          <span className="stat__num">{counts.pending}</span>
           <span>Em moderação</span>
         </li>
       </ul>

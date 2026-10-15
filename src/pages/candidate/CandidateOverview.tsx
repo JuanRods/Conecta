@@ -42,28 +42,28 @@ export function CandidateOverview() {
   return (
     <div>
       {!summary.hasProfile && (
-        <div className="cand-callout" role="note">
+        <div className="callout callout--warning" role="note">
           <p>
             Você ainda não completou seu perfil. Um perfil completo ajuda as
             empresas a encontrarem você.
           </p>
-          <Link className="cand-callout__link" to="/painel/perfil">
+          <Link className="callout__link" to="/painel/perfil">
             Completar meu perfil
           </Link>
         </div>
       )}
 
-      <ul className="cand-stats" aria-label="Resumo da sua conta">
-        <li className="cand-stat">
-          <span className="cand-stat__num">{summary.applications}</span>
+      <ul className="stats" aria-label="Resumo da sua conta">
+        <li className="stat">
+          <span className="stat__num">{summary.applications}</span>
           <Link to="/painel/candidaturas">Candidaturas</Link>
         </li>
-        <li className="cand-stat">
-          <span className="cand-stat__num">{summary.favorites}</span>
+        <li className="stat">
+          <span className="stat__num">{summary.favorites}</span>
           <Link to="/painel/favoritos">Vagas favoritas</Link>
         </li>
-        <li className="cand-stat">
-          <span className="cand-stat__num">{summary.alerts}</span>
+        <li className="stat">
+          <span className="stat__num">{summary.alerts}</span>
           <Link to="/painel/favoritos">Alertas de vagas</Link>
         </li>
       </ul>

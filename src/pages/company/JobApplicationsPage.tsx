@@ -53,7 +53,7 @@ export function JobApplicationsPage() {
     return (
       <div>
         <h2>Vaga não encontrada</h2>
-        <p className="comp-muted">
+        <p className="text-muted">
           Esta vaga não existe ou não pertence à sua empresa.
         </p>
         <p>
@@ -73,24 +73,24 @@ export function JobApplicationsPage() {
         <Link to="/empresa/vagas">← Minhas vagas</Link>
       </p>
       <h2>Candidaturas: {job.title}</h2>
-      <p className="comp-muted">
+      <p className="text-muted">
         {apps.length} {apps.length === 1 ? "candidatura" : "candidaturas"}.
       </p>
 
       {apps.length === 0 ? (
-        <p className="comp-muted">Esta vaga ainda não recebeu candidaturas.</p>
+        <p className="text-muted">Esta vaga ainda não recebeu candidaturas.</p>
       ) : (
-        <ul className="comp-list">
+        <ul className="card-list">
           {apps.map((app) => (
             <li key={app.id}>
               <article
-                className="comp-card"
+                className="card"
                 aria-labelledby={`capp-${app.id}-title`}
               >
-                <h3 id={`capp-${app.id}-title`} className="comp-card__title">
+                <h3 id={`capp-${app.id}-title`} className="card__title">
                   Candidatura #{app.id.slice(0, 6)}
                 </h3>
-                <p className="comp-card__meta">
+                <p className="card__meta">
                   Recebida em{" "}
                   {new Date(app.createdAt).toLocaleDateString("pt-BR")} · status
                   atual: <strong>{APPLICATION_STATUS_LABELS[app.status]}</strong>
@@ -107,7 +107,7 @@ export function JobApplicationsPage() {
                     .
                   </p>
                 ) : (
-                  <p className="comp-muted">
+                  <p className="text-muted">
                     O candidato não compartilhou acomodações (dado sigiloso).
                   </p>
                 )}

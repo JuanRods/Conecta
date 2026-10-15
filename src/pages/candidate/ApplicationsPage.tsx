@@ -57,7 +57,7 @@ export function ApplicationsPage() {
     return (
       <div>
         <h2>Minhas candidaturas</h2>
-        <p className="cand-muted">
+        <p className="text-muted">
           Você ainda não se candidatou a nenhuma vaga.
         </p>
         <p>
@@ -70,7 +70,7 @@ export function ApplicationsPage() {
   return (
     <div>
       <h2>Minhas candidaturas</h2>
-      <p className="cand-muted">
+      <p className="text-muted">
         {apps.length} {apps.length === 1 ? "candidatura" : "candidaturas"}.
       </p>
 
@@ -92,19 +92,19 @@ export function ApplicationsPage() {
         </section>
       )}
 
-      <ul className="cand-list">
+      <ul className="card-list">
         {apps.map((app) => {
           const stepIndex = STATUS_ORDER.indexOf(app.status);
           return (
             <li key={app.id}>
               <article
-                className="cand-card"
+                className="card"
                 aria-labelledby={`app-${app.id}-title`}
               >
-                <h3 id={`app-${app.id}-title`} className="cand-card__title">
+                <h3 id={`app-${app.id}-title`} className="card__title">
                   <Link to={`/vagas/${app.jobId}`}>{app.jobTitle}</Link>
                 </h3>
-                <p className="cand-card__meta">
+                <p className="card__meta">
                   {app.companyName} · candidatura em{" "}
                   {new Date(app.createdAt).toLocaleDateString("pt-BR")}
                 </p>
@@ -135,7 +135,7 @@ export function ApplicationsPage() {
 
                 {app.sharedAccommodations &&
                   app.sharedAccommodations.length > 0 && (
-                    <p className="cand-muted">
+                    <p className="text-muted">
                       Acomodações compartilhadas:{" "}
                       {app.sharedAccommodations
                         .map((f) => FEATURE_LABELS[f])

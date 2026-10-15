@@ -14,7 +14,7 @@ Plataforma web de empregos **inclusiva** para Pessoas com Deficiência (PcD), co
 | 3 | Área pública e busca de vagas | ✅ |
 | 4 | Perfil Candidato | ✅ |
 | 5 | Perfil Empresa | ✅ |
-| 6 | Painel do Administrador (moderação) | ⏳ |
+| 6 | Painel do Administrador (moderação) | ✅ |
 | 7 | Qualidade, LGPD e lançamento | ⏳ |
 
 A especificação completa está em [`.kiro/specs/conecta-inclusao`](.kiro/specs/conecta-inclusao).
@@ -87,17 +87,43 @@ npm test         # testes unitários + acessibilidade (axe)
   (dados sensíveis só aparecem se o candidato autorizou — NF2).
 - 🧭 **Navegação guiada** da publicação de vaga.
 
+## Painel do administrador (Fase 6)
+
+- 🗂️ **Fila de moderação**: vagas pendentes e empresas a verificar.
+- ✅ **Aprovar / rejeitar / solicitar ajustes** vagas com justificativa; o autor
+  é notificado e a vaga só fica pública após aprovação.
+- 🏢 **Verificação de empresas**.
+- 🚩 **Gestão de denúncias** (arquivar).
+- 🔒 **Suspensão / reativação de contas** — contas suspensas têm o login
+  bloqueado.
+- 📜 **Log de auditoria** imutável de todas as ações (quem, o quê, quando).
+- 📊 **Métricas** da plataforma com **exportação CSV**.
+
+## Organização do CSS (design por elementos)
+
+Para facilitar a edição do design, os estilos reutilizáveis ficam em
+`src/styles/elements/`, **um arquivo por elemento** (`dashboard`, `card`,
+`badge`, `stat`, `callout`, `form-layout`, `text`), importados globalmente. Os
+painéis de candidato, empresa e administrador **compõem** essas classes em vez
+de repetir regras; cada CSS de página contém apenas o que é exclusivo dela.
+Assim, para mudar a aparência de um elemento em todo o app, basta editar o
+arquivo correspondente.
+
 ## Estrutura
 
 ```
 src/
 ├─ accessibility/   # contexto de preferências, tour guiado, aria-live, focus trap
 ├─ auth/            # contexto de autenticação, RBAC, serviço mock (Fase 2)
-├─ jobs/            # domínio de vagas, busca pública + CRUD da empresa
+├─ jobs/            # domínio de vagas, busca pública + CRUD + moderação
 ├─ candidate/       # perfil, candidaturas, favoritos/alertas e denúncias (Fase 4)
 ├─ company/         # perfil da empresa, verificação e linguagem inclusiva (Fase 5)
+├─ admin/           # serviços de moderação, auditoria e métricas (Fase 6)
 ├─ components/      # Layout, Button, Field, Modal, Logo, controles de a11y
-├─ pages/           # Home, autenticação, vagas, painel do candidato e da empresa
-├─ styles/          # tokens de design e CSS global (temas)
-└─ test/            # setup e testes (acessibilidade, auth, vagas, candidato, empresa)
+├─ pages/           # Home, autenticação, vagas e painéis (candidato/empresa/admin)
+├─ styles/
+│  ├─ tokens.css    # variáveis de design (cores, espaçamento, temas)
+│  ├─ global.css    # reset, base e importações
+│  └─ elements/     # 🎨 um arquivo CSS por elemento reutilizável
+└─ test/            # testes (a11y, auth, vagas, candidato, empresa, admin)
 ```

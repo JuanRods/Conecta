@@ -4,6 +4,7 @@ import {
   type RegisterInput,
   type Role,
   type User,
+  type UserStatus,
 } from "./types";
 import { isStrongPassword } from "./passwordPolicy";
 
@@ -166,5 +167,26 @@ export const authService = {
     } catch {
       return null;
     }
+  },
+
+  // --- Administração de contas (Fase 6 — M2) ---
+
+  /** Lista todas as contas (sem o hash de senha). */
+  async listUsers(): Promise<User[]> {
+    ensureSeed();
+    return simulateLatency(loadUsers().map(stripPassword));
+  },
+
+  /**
+   * Suspende ou reativa uma conta (M2.5). Contas suspensas têm o login
+   * bloqueado em `login()`.
+   */
+  async setUserStatus(userId: string, status: UserStatus): Promise<User> {
+    const users = loadUsers();
+    const idx = users.findIndex((u) => u.id === userId);
+    if (idx === -1) throw new AuthError("NOT_FOUND", "Conta não encontrada.");
+    users[idx] = { ...users[idx], status };
+    saveUsers(users);
+    return simulateLatency(stripPassword(users[idx]));
   },
 };

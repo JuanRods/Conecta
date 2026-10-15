@@ -10,6 +10,7 @@ import {
   isValidCnpj,
 } from "../../company/companyService";
 import {
+  VERIFICATION_BADGE,
   VERIFICATION_LABELS,
   type Company,
 } from "../../company/types";
@@ -85,7 +86,7 @@ export function CompanyProfilePage() {
 
       <p
         className={
-          "comp-badge comp-badge--" + company.verificationStatus.toLowerCase()
+          "badge badge--" + VERIFICATION_BADGE[company.verificationStatus]
         }
         role="status"
       >
@@ -95,12 +96,12 @@ export function CompanyProfilePage() {
       <FormErrorSummary errors={errors} />
 
       {savedAt && (
-        <p className="comp-success" role="status">
+        <p className="feedback-success" role="status">
           Perfil salvo em {new Date(savedAt).toLocaleString("pt-BR")}.
         </p>
       )}
 
-      <fieldset className="comp-fieldset">
+      <fieldset className="form-fieldset">
         <legend>Dados institucionais</legend>
 
         <Field
@@ -154,7 +155,7 @@ export function CompanyProfilePage() {
         </div>
       </fieldset>
 
-      <fieldset className="comp-fieldset">
+      <fieldset className="form-fieldset">
         <legend>Compromisso com a inclusão</legend>
         <div className="field">
           <label className="field__label" htmlFor="comp-policy">
@@ -173,11 +174,11 @@ export function CompanyProfilePage() {
           />
         </div>
 
-        <fieldset className="comp-features">
+        <fieldset className="form-group">
           <legend>Recursos de acessibilidade oferecidos</legend>
-          <div className="comp-checks">
+          <div className="choice-grid">
             {FEATURES.map((f) => (
-              <label key={f} className="comp-check">
+              <label key={f} className="choice">
                 <input
                   type="checkbox"
                   checked={company.accessibilityFeatures.includes(f)}
@@ -190,7 +191,7 @@ export function CompanyProfilePage() {
         </fieldset>
       </fieldset>
 
-      <div className="comp-actions">
+      <div className="form-actions">
         <Button type="submit" disabled={saving}>
           {saving ? "Salvando…" : "Salvar perfil"}
         </Button>
