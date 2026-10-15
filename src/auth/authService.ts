@@ -189,4 +189,15 @@ export const authService = {
     saveUsers(users);
     return simulateLatency(stripPassword(users[idx]));
   },
+
+  /**
+   * Remove a conta e encerra a sessão (direito à exclusão — LGPD/NF2).
+   * A remoção dos dados associados é orquestrada pelo privacyService.
+   */
+  async deleteUser(userId: string): Promise<void> {
+    saveUsers(loadUsers().filter((u) => u.id !== userId));
+    const current = this.getSession();
+    if (current?.user.id === userId) this.logout();
+    await simulateLatency(null);
+  },
 };

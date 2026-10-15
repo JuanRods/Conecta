@@ -104,6 +104,12 @@ export const profileService = {
     const current = await this.get(userId);
     return this.save({ ...current, resume: undefined });
   },
+
+  /** Apaga o perfil do usuário (direito à exclusão — LGPD/NF2). */
+  async delete(userId: string): Promise<void> {
+    saveAll(loadAll().filter((p) => p.userId !== userId));
+    await simulateLatency(null);
+  },
 };
 
 /** Formatos de currículo aceitos (C1.3) — PDF e Word. */

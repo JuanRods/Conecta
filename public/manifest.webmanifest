@@ -1,0 +1,20 @@
+{
+  "name": "Conecta Inclusão",
+  "short_name": "Conecta",
+  "description": "Plataforma de empregos inclusiva para pessoas com deficiência (PcD).",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#5B2A86",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

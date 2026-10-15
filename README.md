@@ -15,7 +15,7 @@ Plataforma web de empregos **inclusiva** para Pessoas com Deficiência (PcD), co
 | 4 | Perfil Candidato | ✅ |
 | 5 | Perfil Empresa | ✅ |
 | 6 | Painel do Administrador (moderação) | ✅ |
-| 7 | Qualidade, LGPD e lançamento | ⏳ |
+| 7 | Qualidade, LGPD e lançamento | ✅ |
 
 A especificação completa está em [`.kiro/specs/conecta-inclusao`](.kiro/specs/conecta-inclusao).
 
@@ -33,9 +33,13 @@ A especificação completa está em [`.kiro/specs/conecta-inclusao`](.kiro/specs
 
 ```bash
 npm install
-npm run dev      # ambiente de desenvolvimento
-npm run build    # build de produção
-npm test         # testes unitários + acessibilidade (axe)
+npm run dev        # ambiente de desenvolvimento
+npm run build      # build de produção
+npm test           # testes unitários + acessibilidade (axe)
+
+# Testes E2E (Playwright) — inclui navegação só por teclado
+npx playwright install --with-deps   # 1ª vez
+npm run test:e2e
 ```
 
 ## Busca pública de vagas (Fase 3)
@@ -98,6 +102,19 @@ npm test         # testes unitários + acessibilidade (axe)
   bloqueado.
 - 📜 **Log de auditoria** imutável de todas as ações (quem, o quê, quando).
 - 📊 **Métricas** da plataforma com **exportação CSV**.
+
+## Qualidade, LGPD e lançamento (Fase 7)
+
+- 🧪 **Testes E2E (Playwright)** por perfil, incluindo navegação **só por
+  teclado** (`e2e/`).
+- 🔐 **LGPD**: Central de Privacidade do candidato (`/painel/privacidade`) com
+  **consentimento** versionado, **exportação** de dados em JSON (portabilidade)
+  e **exclusão** da conta e de todos os dados.
+- 🤟 **VLibras**: widget oficial de tradução para Libras integrado ao layout.
+- ⚡ **Desempenho/PWA**: **code-splitting por rota** (carregamento sob demanda),
+  manifest instalável e layout responsivo (320px → desktop).
+- ♿ **Auditoria de acessibilidade** (axe) sem violações e checklists de
+  validação com leitor de tela — ver [`docs/acessibilidade.md`](docs/acessibilidade.md).
 
 ## Organização do CSS (design por elementos)
 

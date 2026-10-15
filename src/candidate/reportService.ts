@@ -73,4 +73,18 @@ export const reportService = {
     localStorage.setItem(REPORTS_KEY, JSON.stringify(all));
     return simulateLatency(all[idx]);
   },
+
+  /** Denúncias feitas por um usuário (para exportação LGPD). */
+  async listByReporter(reporterId: string): Promise<Report[]> {
+    return simulateLatency(load().filter((r) => r.reporterId === reporterId));
+  },
+
+  /** Remove as denúncias feitas por um usuário (direito à exclusão). */
+  async purgeByReporter(reporterId: string): Promise<void> {
+    localStorage.setItem(
+      REPORTS_KEY,
+      JSON.stringify(load().filter((r) => r.reporterId !== reporterId)),
+    );
+    await simulateLatency(null);
+  },
 };
