@@ -37,17 +37,67 @@ cp server/.env.example server/.env
 
 ```ini
 # server/.env  (ignorado pelo Git — nunca comite senhas reais)
+# Estes valores batem com o banco criado tanto pelo Docker quanto pelo
+# scripts/postgres.sh: usuário/banco "conecta" com auth "trust" (SEM senha).
 PGHOST=localhost
 PGPORT=5432
-PGDATABASE=postgres
-PGUSER=postgres
-PGPASSWORD=sua-senha
+PGDATABASE=conecta
+PGUSER=conecta
+PGPASSWORD=
 ```
 
+> ⚠️ **Importante:** o usuário, o banco e a senha precisam bater com a instância
+> que você subiu. Os dois caminhos sugeridos aqui (Docker e `scripts/postgres.sh`)
+> criam o usuário/banco **`conecta`** com autenticação **`trust`** (sem senha),
+> então deixe `PGPASSWORD` **vazio**. Se o seu PostgreSQL usar outro
+> usuário/banco/senha (ex.: a instalação padrão `postgres`/`postgres`), ajuste
+> estes valores de acordo. Uma divergência aqui causa erros de conexão como
+> `ECONNREFUSED`, `password authentication failed` ou `database "conecta" does
+> not exist`.
+>
 > Prefira as variáveis separadas quando a senha tiver caracteres especiais
 > (ex.: `@`): a aplicação faz o *percent-encoding* automaticamente. Se preferir,
 > use `DATABASE_URL` (tem precedência) — mas aí a senha precisa ser codificada
 > na própria URL (`@` → `%40`).
+
+### Conectando pelo DBeaver
+
+Depois de subir o PostgreSQL (Docker ou `scripts/postgres.sh`), crie uma
+conexão **PostgreSQL** no DBeaver com **exatamente os mesmos valores** do
+`server/.env`:
+
+| Campo | Valor |
+|-------|-------|
+| Host | `localhost` (ou `127.0.0.1`) |
+| Port | `5432` |
+| Database | `conecta` |
+| Username | `conecta` |
+| Password | *(deixe em branco)* |
+
+Como a autenticação é `trust`, a senha fica **vazia**. Marque **"Show all
+databases"** se quiser enxergar o `postgres` além do `conecta`. Clique em **Test
+Connection** — se aparecer "Connected", está tudo certo.
+
+> Dica: se o DBeaver reclamar que a senha é obrigatória, em
+> *Edit Connection → Connection settings* desmarque qualquer exigência de senha
+> e salve com o campo vazio. Para a instalação sem Docker, confirme que o
+> servidor está de pé com `./scripts/postgres.sh status` (deve dizer
+> `accepting connections`).
+
+#### O banco não aparece / não conecta no DBeaver?
+
+1. **Servidor no ar?** `./scripts/postgres.sh status` deve responder
+   `127.0.0.1:5432 - accepting connections`. Se não, rode `start` (ou `init` na
+   primeira vez). No sandbox, exporte `CONECTA_PG_HOME="$PWD/.pgsql"` antes.
+2. **Banco `conecta` existe?** `./scripts/postgres.sh psql -l` deve listar
+   `conecta`. (O script agora espera o servidor ficar pronto antes de criar o
+   banco, evitando o antigo erro `database "conecta" does not exist`.)
+3. **Credenciais batem?** Host/porta/usuário/banco do DBeaver precisam ser
+   idênticos aos do `server/.env`.
+4. **Rodando em container/remoto?** Se o PostgreSQL está em um ambiente remoto
+   (ex.: sandbox na nuvem), o DBeaver da sua máquina **não** alcança
+   `localhost:5432` do servidor remoto — rode o banco localmente ou crie um
+   túnel SSH até a porta 5432.
 
 ### 3. Schema + seed
 

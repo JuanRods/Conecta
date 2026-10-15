@@ -69,13 +69,34 @@ cmd_init() {
   as_pg "$BIN/initdb" -D "$DATA" -U "$DBUSER" --auth=trust --encoding=UTF8 --locale=C >/dev/null
   cmd_start
   echo "==> Criando banco '$DBNAME'…"
-  "$BIN/createdb" -h 127.0.0.1 -p "$PORT" -U "$DBUSER" "$DBNAME" 2>/dev/null || echo "   (já existe)"
+  # Espera o servidor aceitar conexões antes de criar o banco. Sem isso, em
+  # máquinas lentas o createdb falhava silenciosamente e o banco "$DBNAME"
+  # nunca era criado (erro posterior: database "$DBNAME" does not exist).
+  wait_ready
+  if "$BIN/psql" -h 127.0.0.1 -p "$PORT" -U "$DBUSER" -d postgres -tAc \
+       "SELECT 1 FROM pg_database WHERE datname='$DBNAME'" | grep -q 1; then
+    echo "   (já existe)"
+  else
+    "$BIN/createdb" -h 127.0.0.1 -p "$PORT" -U "$DBUSER" "$DBNAME"
+  fi
   echo "==> Pronto: postgres://$DBUSER@127.0.0.1:$PORT/$DBNAME"
 }
 
+# Aguarda o servidor aceitar conexões (até ~15s).
+wait_ready() {
+  for _ in $(seq 1 30); do
+    if "$BIN/pg_isready" -h 127.0.0.1 -p "$PORT" -U "$DBUSER" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "   (aviso: servidor não respondeu a tempo em 127.0.0.1:$PORT)" >&2
+  return 1
+}
+
 cmd_start() {
-  as_pg "$BIN/pg_ctl" -D "$DATA" -o "-p $PORT -k $SOCK -h 127.0.0.1" -l "$LOG" start
-  sleep 2
+  as_pg "$BIN/pg_ctl" -D "$DATA" -o "-p $PORT -k $SOCK -h 127.0.0.1" -l "$LOG" -w start
+  wait_ready
   cmd_status
 }
 
