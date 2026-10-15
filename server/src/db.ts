@@ -2,20 +2,45 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+import { loadEnv } from "./env.js";
 
 /**
  * Pool de conexões PostgreSQL.
- * A URL vem de DATABASE_URL (ver server/.env.example).
+ *
+ * A conexão pode ser definida de duas formas (ver server/.env.example):
+ *  - DATABASE_URL completa, ou
+ *  - variáveis separadas PGHOST / PGPORT / PGDATABASE / PGUSER / PGPASSWORD.
+ *
+ * As variáveis separadas são úteis quando a senha tem caracteres especiais
+ * (ex.: "@"), que precisariam ser codificados numa URL.
  */
+
+loadEnv();
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 export const pool = new Pool({
-  connectionString:
-    process.env.DATABASE_URL ??
-    "postgres://conecta@127.0.0.1:5432/conecta",
+  connectionString: resolveConnectionString(),
   max: 10,
 });
+
+/** Monta a connection string a partir do ambiente, com fallback para dev. */
+function resolveConnectionString(): string {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+  const host = process.env.PGHOST ?? "localhost";
+  const port = process.env.PGPORT ?? "5432";
+  const database = process.env.PGDATABASE ?? "postgres";
+  const user = process.env.PGUSER ?? "postgres";
+  const password = process.env.PGPASSWORD ?? "";
+
+  // Codifica usuário e senha para suportar caracteres especiais (@, :, /, …).
+  const auth = password
+    ? `${encodeURIComponent(user)}:${encodeURIComponent(password)}@`
+    : `${encodeURIComponent(user)}@`;
+
+  return `postgres://${auth}${host}:${port}/${database}`;
+}
 
 /** Executa uma query tipada. */
 export async function query<T = unknown>(
