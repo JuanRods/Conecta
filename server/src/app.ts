@@ -1,6 +1,13 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
-import { query, queryOne } from "./db.js";
+import { query, queryOne, withTransaction, type Tx } from "./db.js";
+import {
+  hashPassword,
+  verifyPassword,
+  signToken,
+  requireRole,
+  type Role,
+} from "./auth.js";
 import {
   toApplication,
   toCompany,
@@ -14,11 +21,10 @@ import {
 /**
  * API REST do Conecta Inclusão (endpoints do design §4).
  *
- * Observação de segurança: este servidor de referência usa o mesmo hash
- * didático do mock do frontend e NÃO implementa JWT. Antes de produção:
- * trocar por argon2 + JWT/refresh token e aplicar o RBAC por middleware.
- * As regras de negócio sensíveis (só vagas APPROVED no público; acomodações
- * apenas com consentimento) já são aplicadas aqui, no servidor.
+ * Segurança: senhas com **bcrypt**, sessão por **JWT** e **RBAC** por middleware
+ * (ver auth.ts). As rotas administrativas exigem o papel ADMIN; as de empresa,
+ * COMPANY. As regras de negócio sensíveis (só vagas APPROVED no público;
+ * acomodações apenas com consentimento) são aplicadas aqui, no servidor.
  */
 
 /** SELECT base de vagas, já com o nome da empresa resolvido. */
@@ -57,14 +63,18 @@ export function createApp(): Express {
     if (exists) {
       return fail(res, 409, "EMAIL_IN_USE", "Já existe uma conta com este e-mail.");
     }
-    const role = accountType === "company" ? "COMPANY" : "CANDIDATE";
-    const row = await queryOne<never>(
+    const role: Role = accountType === "company" ? "COMPANY" : "CANDIDATE";
+    const row = await queryOne<{
+      id: string; name: string; email: string; role: string;
+      status: string; created_at: Date;
+    }>(
       `INSERT INTO users (name, email, password_hash, role)
        VALUES ($1, $2, $3, $4::user_role)
        RETURNING id, name, email, role, status, created_at`,
-      [String(name).trim(), normalized, hash(password), role],
+      [String(name).trim(), normalized, hashPassword(password), role],
     );
-    ok(res, { token: `pg-${(row as never as { id: string }).id}`, user: toUser(row as never) });
+    const user = toUser(row as never);
+    ok(res, { token: signToken({ sub: user.id, role: user.role as Role, name: user.name }), user });
   });
 
   app.post("/auth/login", async (req: Request, res: Response) => {
@@ -75,13 +85,14 @@ export function createApp(): Express {
       status: string; created_at: Date; password_hash: string;
     }>("SELECT * FROM users WHERE email = $1", [normalized]);
 
-    if (!row || row.password_hash !== hash(password)) {
+    if (!row || !verifyPassword(password, row.password_hash)) {
       return fail(res, 401, "INVALID_CREDENTIALS", "E-mail ou senha incorretos.");
     }
     if (row.status === "SUSPENDED") {
       return fail(res, 403, "ACCOUNT_SUSPENDED", "Esta conta está suspensa. Fale com o suporte.");
     }
-    ok(res, { token: `pg-${row.id}`, user: toUser(row) });
+    const user = toUser(row);
+    ok(res, { token: signToken({ sub: user.id, role: user.role as Role, name: user.name }), user });
   });
 
   // ------------------------- Vagas (busca pública) -------------------------
@@ -290,25 +301,30 @@ export function createApp(): Express {
 
   app.patch("/applications/:id/status", async (req: Request, res: Response) => {
     const { status } = req.body ?? {};
-    const row = await queryOne(
-      `WITH updated AS (
-         UPDATE applications SET status = $2::application_status
-         WHERE id = $1 RETURNING *
-       )
-       SELECT u.*, j.title AS job_title, c.name AS company_name
-       FROM updated u
-       JOIN jobs j ON j.id = u.job_id
-       JOIN companies c ON c.user_id = j.company_id`,
-      [req.params.id, status],
-    );
-    if (!row) return fail(res, 404, "NOT_FOUND", "Candidatura não encontrada.");
-    const app0 = toApplication(row as never);
-    // E3.2: notifica o candidato
-    await query(
-      `INSERT INTO notifications (user_id, type, payload)
-       VALUES ($1, 'APPLICATION_STATUS', $2::jsonb)`,
-      [app0.candidateId, JSON.stringify({ jobTitle: app0.jobTitle, status })],
-    );
+    // Transação: muda o status E registra a notificação atomicamente (E3.2).
+    // Se a notificação falhar, o status não fica "mudado pela metade".
+    const app0 = await withTransaction(async (tx) => {
+      const row = await tx.queryOne(
+        `WITH updated AS (
+           UPDATE applications SET status = $2::application_status
+           WHERE id = $1 RETURNING *
+         )
+         SELECT u.*, j.title AS job_title, c.name AS company_name
+         FROM updated u
+         JOIN jobs j ON j.id = u.job_id
+         JOIN companies c ON c.user_id = j.company_id`,
+        [req.params.id, status],
+      );
+      if (!row) return null;
+      const mapped = toApplication(row as never);
+      await tx.query(
+        `INSERT INTO notifications (user_id, type, payload)
+         VALUES ($1, 'APPLICATION_STATUS', $2::jsonb)`,
+        [mapped.candidateId, JSON.stringify({ jobTitle: mapped.jobTitle, status })],
+      );
+      return mapped;
+    });
+    if (!app0) return fail(res, 404, "NOT_FOUND", "Candidatura não encontrada.");
     ok(res, app0);
   });
 
@@ -416,7 +432,7 @@ export function createApp(): Express {
 
   // ------------------------- Moderação / Admin ----------------------------
 
-  app.get("/admin/moderation/queue", async (_req, res) => {
+  app.get("/admin/moderation/queue", requireRole("ADMIN"), async (_req, res) => {
     const [jobs, companies, reports] = await Promise.all([
       query<JobRow>(`${JOB_SELECT} WHERE j.status = 'PENDING' ORDER BY j.created_at`),
       query("SELECT * FROM companies WHERE verification_status = 'PENDING'"),
@@ -429,75 +445,87 @@ export function createApp(): Express {
     });
   });
 
-  app.patch("/admin/jobs/:id/review", async (req: Request, res: Response) => {
+  app.patch("/admin/jobs/:id/review", requireRole("ADMIN"), async (req: Request, res: Response) => {
     const { action, reason, adminId, adminName } = req.body ?? {};
     const approve = action === "approve";
-    const row = await queryOne<JobRow>(
-      `WITH updated AS (
-         UPDATE jobs SET
-           status = $2::job_status,
-           published_at = CASE WHEN $3 THEN now() ELSE NULL END
-         WHERE id = $1 RETURNING *
-       )
-       SELECT u.*, c.name AS company_name FROM updated u
-       JOIN companies c ON c.user_id = u.company_id`,
-      [req.params.id, approve ? "APPROVED" : "REJECTED", approve],
-    );
-    if (!row) return fail(res, 404, "NOT_FOUND", "Vaga não encontrada.");
-
-    await audit(adminId, adminName, "JOB", row.id, row.title,
-      approve ? "APPROVE" : action === "request_changes" ? "REQUEST_CHANGES" : "REJECT", reason);
-    await notify(row.company_id, "MODERATION", {
-      message: approve
-        ? `Sua vaga "${row.title}" foi aprovada e publicada.`
-        : `Sua vaga "${row.title}" foi rejeitada. Motivo: ${reason ?? "-"}`,
+    // Transação (M1): mudar status + auditar (NF8) + notificar são atômicos.
+    const row = await withTransaction(async (tx) => {
+      const updated = await tx.queryOne<JobRow>(
+        `WITH updated AS (
+           UPDATE jobs SET
+             status = $2::job_status,
+             published_at = CASE WHEN $3 THEN now() ELSE NULL END
+           WHERE id = $1 RETURNING *
+         )
+         SELECT u.*, c.name AS company_name FROM updated u
+         JOIN companies c ON c.user_id = u.company_id`,
+        [req.params.id, approve ? "APPROVED" : "REJECTED", approve],
+      );
+      if (!updated) return null;
+      await audit(adminId, adminName, "JOB", updated.id, updated.title,
+        approve ? "APPROVE" : action === "request_changes" ? "REQUEST_CHANGES" : "REJECT", reason, tx);
+      await notify(updated.company_id, "MODERATION", {
+        message: approve
+          ? `Sua vaga "${updated.title}" foi aprovada e publicada.`
+          : `Sua vaga "${updated.title}" foi rejeitada. Motivo: ${reason ?? "-"}`,
+      }, tx);
+      return updated;
     });
+    if (!row) return fail(res, 404, "NOT_FOUND", "Vaga não encontrada.");
     ok(res, toJob(row));
   });
 
-  app.patch("/admin/companies/:userId/verify", async (req: Request, res: Response) => {
+  app.patch("/admin/companies/:userId/verify", requireRole("ADMIN"), async (req: Request, res: Response) => {
     const { status, reason, adminId, adminName } = req.body ?? {};
-    const row = await queryOne(
-      `UPDATE companies SET verification_status = $2::verification_status, updated_at = now()
-       WHERE user_id = $1 RETURNING *`,
-      [req.params.userId, status],
-    );
-    if (!row) return fail(res, 404, "NOT_FOUND", "Empresa não encontrada.");
-    const company = toCompany(row as never);
-    await audit(adminId, adminName, "COMPANY", company.userId, company.name,
-      status === "VERIFIED" ? "VERIFY" : "REJECT_VERIFICATION", reason);
+    const company = await withTransaction(async (tx) => {
+      const row = await tx.queryOne(
+        `UPDATE companies SET verification_status = $2::verification_status, updated_at = now()
+         WHERE user_id = $1 RETURNING *`,
+        [req.params.userId, status],
+      );
+      if (!row) return null;
+      const mapped = toCompany(row as never);
+      await audit(adminId, adminName, "COMPANY", mapped.userId, mapped.name,
+        status === "VERIFIED" ? "VERIFY" : "REJECT_VERIFICATION", reason, tx);
+      return mapped;
+    });
+    if (!company) return fail(res, 404, "NOT_FOUND", "Empresa não encontrada.");
     ok(res, company);
   });
 
-  app.get("/admin/users", async (_req, res) => {
+  app.get("/admin/users", requireRole("ADMIN"), async (_req, res) => {
     const rows = await query(
       "SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at",
     );
     ok(res, rows.map((r) => toUser(r as never)));
   });
 
-  app.patch("/admin/users/:id/status", async (req: Request, res: Response) => {
+  app.patch("/admin/users/:id/status", requireRole("ADMIN"), async (req: Request, res: Response) => {
     const { status, reason, adminId, adminName } = req.body ?? {};
-    const row = await queryOne(
-      `UPDATE users SET status = $2::user_status WHERE id = $1
-       RETURNING id, name, email, role, status, created_at`,
-      [req.params.id, status],
-    );
-    if (!row) return fail(res, 404, "NOT_FOUND", "Conta não encontrada.");
-    const user = toUser(row as never);
-    await audit(adminId, adminName, "USER", user.id, user.name,
-      status === "SUSPENDED" ? "SUSPEND_USER" : "REACTIVATE_USER", reason);
+    const user = await withTransaction(async (tx) => {
+      const row = await tx.queryOne(
+        `UPDATE users SET status = $2::user_status WHERE id = $1
+         RETURNING id, name, email, role, status, created_at`,
+        [req.params.id, status],
+      );
+      if (!row) return null;
+      const mapped = toUser(row as never);
+      await audit(adminId, adminName, "USER", mapped.id, mapped.name,
+        status === "SUSPENDED" ? "SUSPEND_USER" : "REACTIVATE_USER", reason, tx);
+      return mapped;
+    });
+    if (!user) return fail(res, 404, "NOT_FOUND", "Conta não encontrada.");
     ok(res, user);
   });
 
-  app.get("/admin/audit", async (_req, res) => {
+  app.get("/admin/audit", requireRole("ADMIN"), async (_req, res) => {
     const rows = await query(
       "SELECT * FROM moderation_actions ORDER BY created_at DESC LIMIT 200",
     );
     ok(res, rows.map((r) => toModerationAction(r as never)));
   });
 
-  app.get("/admin/metrics", async (_req, res) => {
+  app.get("/admin/metrics", requireRole("ADMIN"), async (_req, res) => {
     const [users, jobs, companies, reports] = await Promise.all([
       query<{ role: string; status: string; count: string }>(
         "SELECT role::text, status::text, count(*) FROM users GROUP BY role, status",
@@ -614,28 +642,27 @@ function toIso(value: unknown): string | undefined {
   return value instanceof Date ? value.toISOString() : String(value);
 }
 
+/** Registra uma ação de moderação na auditoria (NF8). Aceita um Tx opcional. */
 async function audit(
   adminId: string | undefined, adminName: string | undefined,
   targetType: string, targetId: string, targetLabel: string,
-  action: string, reason?: string,
+  action: string, reason?: string, tx?: Tx,
 ) {
-  await query(
+  const run = tx ?? { query };
+  await run.query(
     `INSERT INTO moderation_actions (admin_id, admin_name, target_type, target_id, target_label, action, reason)
      VALUES ($1,$2,$3,$4,$5,$6,$7)`,
     [adminId ?? null, adminName ?? "Administração", targetType, targetId, targetLabel, action, reason ?? null],
   );
 }
 
-async function notify(userId: string, type: string, payload: unknown) {
-  await query(
+/** Cria uma notificação para o usuário. Aceita um Tx opcional. */
+async function notify(userId: string, type: string, payload: unknown, tx?: Tx) {
+  const run = tx ?? { query };
+  await run.query(
     "INSERT INTO notifications (user_id, type, payload) VALUES ($1,$2,$3::jsonb)",
     [userId, type, JSON.stringify(payload)],
   );
-}
-
-/** Hash didático, igual ao mock do frontend. Em produção: argon2. */
-function hash(password: string): string {
-  return `hashed:${Buffer.from(String(password), "utf8").toString("base64")}`;
 }
 
 function toArray(value: unknown): string[] {

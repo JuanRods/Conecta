@@ -49,16 +49,21 @@ npm run test:e2e
 ### Com banco de dados (PostgreSQL)
 
 ```bash
-./scripts/postgres.sh install && ./scripts/postgres.sh init   # sem Docker
+export CONECTA_PG_HOME="$PWD/.pgsql"                          # sandbox: HOME é só-leitura
+./scripts/postgres.sh install && ./scripts/postgres.sh init  # sem Docker
+cp server/.env.example server/.env                           # credenciais do banco + JWT_SECRET
 npm run api:install        # dependências da API
-npm run db:reset           # schema + dados de demonstração
+npm run db:reset           # schema + dados de demonstração (hashes bcrypt)
 npm run api                # API em http://localhost:3001
 cp .env.example .env.local # aponta o frontend para a API
 npm run dev
-npm run test:api           # testes de integração contra o Postgres real
+npm run test:api           # 22 testes de integração contra o Postgres real
 ```
 
-Detalhes do modelo de dados, do seed e das contas de teste em
+A API é **real e completa**: senhas com **bcrypt**, sessão por **JWT** e
+**RBAC** nas rotas de administração, com **transações** nas operações de várias
+escritas (moderação, auditoria e notificações). Detalhes do modelo de dados, da
+segurança, do seed e das contas de teste em
 [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
 
 ## Busca pública de vagas (Fase 3)

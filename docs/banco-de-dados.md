@@ -139,22 +139,50 @@ PATCH  /admin/users/:id/status  GET    /admin/audit         GET /admin/metrics
 GET    /privacy/:id/export      DELETE /privacy/:id         PUT /privacy/:id/consent
 ```
 
+## Segurança (autenticação e autorização)
+
+A API usa segurança real (ver `server/src/auth.ts`):
+
+- **Senhas com bcrypt** (hash + salt). `verifyPassword` ainda aceita o formato
+  legado `hashed:base64` para migração suave, mas contas novas e o seed usam
+  bcrypt.
+- **Sessão por JWT** (HS256) assinado com `JWT_SECRET`. O token é devolvido no
+  login/registro e enviado pelo frontend no header `Authorization: Bearer`.
+- **RBAC por middleware**: as rotas `/admin/*` exigem o papel `ADMIN`
+  (`requireRole("ADMIN")`); sem token → `401`, papel errado → `403`.
+
+### Integridade transacional
+
+Operações com **várias escritas** rodam em **transação** (`withTransaction` em
+`server/src/db.ts`): moderar uma vaga (status + auditoria + notificação),
+atualizar candidatura (status + notificação), verificar empresa e
+suspender/reativar conta (status + auditoria) são **atômicas** — ou tudo
+confirma, ou tudo reverte.
+
 ## Testes
 
 ```bash
-npm run test:api   # 21 testes de integração contra o PostgreSQL real
+npm run test:api   # 22 testes de integração contra o PostgreSQL real
 ```
 
 A suíte recria o schema, injeta o seed e valida: busca pública só com vagas
 aprovadas, filtros, bloqueio de conta suspensa, candidatura duplicada,
 consentimento de acomodações, aprovação com auditoria, verificação de empresa,
-exportação e exclusão LGPD.
+exportação e exclusão LGPD, além de **JWT + RBAC** (401 sem token, 403 com papel
+errado, 200 como admin).
+
+## Nota para o sandbox de desenvolvimento
+
+O `HOME` do sandbox é somente-leitura; aponte o prefixo do PostgreSQL para um
+diretório gravável do projeto antes de instalar/iniciar:
+
+```bash
+export CONECTA_PG_HOME="$PWD/.pgsql"
+./scripts/postgres.sh install && ./scripts/postgres.sh init && ./scripts/postgres.sh start
+```
 
 ## Pendências antes de produção
 
-- Trocar o hash didático (`hashed:base64`) por **argon2** e emitir **JWT**
-  com refresh token.
-- Aplicar o RBAC por middleware na API (hoje as regras de negócio sensíveis já
-  são validadas no servidor, mas não há verificação de identidade do chamador).
+- Rotação de chave do `JWT_SECRET` e refresh tokens.
 - Trocar a cifra simbólica do bloco sensível por criptografia autenticada
   gerenciada por KMS, com log de acesso a dados sensíveis (NF8).

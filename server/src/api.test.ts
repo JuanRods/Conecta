@@ -20,8 +20,17 @@ const JOB_FRONT = "00000000-0000-0000-0000-0000000000f1";
 const JOB_PENDING = "00000000-0000-0000-0000-0000000000f7";
 const ADMIN = "00000000-0000-0000-0000-0000000000a1";
 
+// Token JWT do administrador (as rotas /admin exigem o papel ADMIN — RBAC).
+let adminToken = "";
+const asAdmin = () => ({ Authorization: `Bearer ${adminToken}` });
+
 beforeAll(async () => {
   await resetAndSeed();
+  const login = await request(app)
+    .post("/auth/login")
+    .send({ email: "admin@conectainclusao.org", password: "Admin@123" })
+    .expect(200);
+  adminToken = login.body.token;
 }, 60_000);
 
 afterAll(async () => {
@@ -35,7 +44,7 @@ describe("Saúde e seed", () => {
   });
 
   it("semeia 5 empresas e 5 candidatos", async () => {
-    const res = await request(app).get("/admin/users").expect(200);
+    const res = await request(app).get("/admin/users").set(asAdmin()).expect(200);
     const companies = res.body.filter((u: { role: string }) => u.role === "COMPANY");
     const candidates = res.body.filter((u: { role: string }) => u.role === "CANDIDATE");
     const admins = res.body.filter((u: { role: string }) => u.role === "ADMIN");
@@ -128,6 +137,24 @@ describe("Autenticação", () => {
       .send({ name: "Outro", email, password: "Senha@123", accountType: "candidate" })
       .expect(409);
   });
+
+  it("emite JWT bcrypt-verificável e aplica RBAC nas rotas /admin", async () => {
+    // Sem token: 401.
+    await request(app).get("/admin/users").expect(401);
+
+    // Com token de candidato (papel errado): 403.
+    const cand = await request(app)
+      .post("/auth/login")
+      .send({ email: "ana.souza@exemplo.com", password: "Senha@123" })
+      .expect(200);
+    await request(app)
+      .get("/admin/users")
+      .set("Authorization", `Bearer ${cand.body.token}`)
+      .expect(403);
+
+    // Com token de admin: 200.
+    await request(app).get("/admin/users").set(asAdmin()).expect(200);
+  });
 });
 
 describe("Candidaturas (C2 / NF2)", () => {
@@ -184,7 +211,7 @@ describe("Candidaturas (C2 / NF2)", () => {
 
 describe("Moderação (M1 / NF8)", () => {
   it("expõe a fila com vagas, empresas e denúncias pendentes", async () => {
-    const res = await request(app).get("/admin/moderation/queue").expect(200);
+    const res = await request(app).get("/admin/moderation/queue").set(asAdmin()).expect(200);
     expect(res.body.jobs.length).toBeGreaterThan(0);
     expect(res.body.companies.length).toBeGreaterThan(0);
     expect(res.body.reports.length).toBeGreaterThan(0);
@@ -193,13 +220,14 @@ describe("Moderação (M1 / NF8)", () => {
   it("aprovar vaga publica e registra auditoria", async () => {
     await request(app)
       .patch(`/admin/jobs/${JOB_PENDING}/review`)
+      .set(asAdmin())
       .send({ action: "approve", adminId: ADMIN, adminName: "Admin Teste" })
       .expect(200);
 
     // Agora aparece no público
     await request(app).get(`/jobs/${JOB_PENDING}`).expect(200);
 
-    const audit = await request(app).get("/admin/audit").expect(200);
+    const audit = await request(app).get("/admin/audit").set(asAdmin()).expect(200);
     expect(
       audit.body.some(
         (a: { targetId: string; action: string }) =>
@@ -211,6 +239,7 @@ describe("Moderação (M1 / NF8)", () => {
   it("verificar empresa muda o status e audita", async () => {
     await request(app)
       .patch(`/admin/companies/${COMPANY_EDU}/verify`)
+      .set(asAdmin())
       .send({ status: "VERIFIED", adminId: ADMIN, adminName: "Admin Teste" })
       .expect(200);
     const company = await request(app).get(`/companies/${COMPANY_EDU}`).expect(200);
@@ -220,6 +249,7 @@ describe("Moderação (M1 / NF8)", () => {
   it("suspende e reativa conta", async () => {
     await request(app)
       .patch(`/admin/users/${CAND_BRUNO}/status`)
+      .set(asAdmin())
       .send({ status: "SUSPENDED", reason: "teste", adminId: ADMIN, adminName: "Admin" })
       .expect(200);
     await request(app)
@@ -229,6 +259,7 @@ describe("Moderação (M1 / NF8)", () => {
 
     await request(app)
       .patch(`/admin/users/${CAND_BRUNO}/status`)
+      .set(asAdmin())
       .send({ status: "ACTIVE", adminId: ADMIN, adminName: "Admin" })
       .expect(200);
     await request(app)
@@ -254,6 +285,7 @@ describe("CRUD de vagas da empresa (E2)", () => {
     // aprova e então edita
     await request(app)
       .patch(`/admin/jobs/${created.body.id}/review`)
+      .set(asAdmin())
       .send({ action: "approve", adminId: ADMIN, adminName: "Admin" })
       .expect(200);
 

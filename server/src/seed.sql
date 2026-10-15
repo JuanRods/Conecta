@@ -6,28 +6,30 @@
 -- FINISHED), além de favoritos, alertas, denúncias, auditoria e consentimentos.
 --
 -- Senha de todas as contas de demonstração: Senha@123
--- (exceto o admin: Admin@123). Os hashes abaixo são do formato didático usado
--- pelo authService — NÃO use em produção; o backend real deve usar argon2.
+-- (exceto o admin: Admin@123). Os hashes abaixo são **bcrypt** (hash + salt),
+-- compatíveis com a verificação real da API (auth.ts).
+--   Admin@123 -> $2b$10$4bS76bslFHdXfZ.3UipA5.GS0523vQqWYQbjfJdtybnXltipXe21O
+--   Senha@123 -> $2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC
 -- =============================================================================
 
 -- IDs fixos para facilitar a conferência manual e os testes.
 INSERT INTO users (id, name, email, password_hash, role, status, created_at) VALUES
-  ('00000000-0000-0000-0000-0000000000a1', 'Administração Conecta', 'admin@conectainclusao.org', 'hashed:QWRtaW5AMTIz', 'ADMIN', 'ACTIVE', now() - interval '120 days'),
+  ('00000000-0000-0000-0000-0000000000a1', 'Administração Conecta', 'admin@conectainclusao.org', '$2b$10$4bS76bslFHdXfZ.3UipA5.GS0523vQqWYQbjfJdtybnXltipXe21O', 'ADMIN', 'ACTIVE', now() - interval '120 days'),
 
   -- ------------------------------ 5 empresas ------------------------------
-  ('00000000-0000-0000-0000-0000000000c1', 'Marina Alves (TechInclui)',   'rh@techinclui.com.br',    'hashed:U2VuaGFAMTIz', 'COMPANY', 'ACTIVE', now() - interval '90 days'),
-  ('00000000-0000-0000-0000-0000000000c2', 'Paulo Reis (CuidarBem)',      'rh@cuidarbem.com.br',     'hashed:U2VuaGFAMTIz', 'COMPANY', 'ACTIVE', now() - interval '80 days'),
-  ('00000000-0000-0000-0000-0000000000c3', 'Fernanda Luz (LogAccess)',    'rh@logaccess.com.br',     'hashed:U2VuaGFAMTIz', 'COMPANY', 'ACTIVE', now() - interval '70 days'),
-  ('00000000-0000-0000-0000-0000000000c4', 'Caio Nunes (EduLivre)',       'rh@edulivre.com.br',      'hashed:U2VuaGFAMTIz', 'COMPANY', 'ACTIVE', now() - interval '60 days'),
-  ('00000000-0000-0000-0000-0000000000c5', 'Bruna Dias (AgroSempre)',     'rh@agrosempre.com.br',    'hashed:U2VuaGFAMTIz', 'COMPANY', 'ACTIVE', now() - interval '50 days'),
+  ('00000000-0000-0000-0000-0000000000c1', 'Marina Alves (TechInclui)',   'rh@techinclui.com.br',    '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'COMPANY', 'ACTIVE', now() - interval '90 days'),
+  ('00000000-0000-0000-0000-0000000000c2', 'Paulo Reis (CuidarBem)',      'rh@cuidarbem.com.br',     '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'COMPANY', 'ACTIVE', now() - interval '80 days'),
+  ('00000000-0000-0000-0000-0000000000c3', 'Fernanda Luz (LogAccess)',    'rh@logaccess.com.br',     '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'COMPANY', 'ACTIVE', now() - interval '70 days'),
+  ('00000000-0000-0000-0000-0000000000c4', 'Caio Nunes (EduLivre)',       'rh@edulivre.com.br',      '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'COMPANY', 'ACTIVE', now() - interval '60 days'),
+  ('00000000-0000-0000-0000-0000000000c5', 'Bruna Dias (AgroSempre)',     'rh@agrosempre.com.br',    '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'COMPANY', 'ACTIVE', now() - interval '50 days'),
 
   -- ----------------------------- 5 candidatos -----------------------------
-  ('00000000-0000-0000-0000-0000000000d1', 'Ana Souza',        'ana.souza@exemplo.com',     'hashed:U2VuaGFAMTIz', 'CANDIDATE', 'ACTIVE',    now() - interval '45 days'),
-  ('00000000-0000-0000-0000-0000000000d2', 'Bruno Carvalho',   'bruno.carvalho@exemplo.com','hashed:U2VuaGFAMTIz', 'CANDIDATE', 'ACTIVE',    now() - interval '40 days'),
-  ('00000000-0000-0000-0000-0000000000d3', 'Carla Mendes',     'carla.mendes@exemplo.com',  'hashed:U2VuaGFAMTIz', 'CANDIDATE', 'ACTIVE',    now() - interval '35 days'),
-  ('00000000-0000-0000-0000-0000000000d4', 'Diego Ramos',      'diego.ramos@exemplo.com',   'hashed:U2VuaGFAMTIz', 'CANDIDATE', 'ACTIVE',    now() - interval '30 days'),
+  ('00000000-0000-0000-0000-0000000000d1', 'Ana Souza',        'ana.souza@exemplo.com',     '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'CANDIDATE', 'ACTIVE',    now() - interval '45 days'),
+  ('00000000-0000-0000-0000-0000000000d2', 'Bruno Carvalho',   'bruno.carvalho@exemplo.com','$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'CANDIDATE', 'ACTIVE',    now() - interval '40 days'),
+  ('00000000-0000-0000-0000-0000000000d3', 'Carla Mendes',     'carla.mendes@exemplo.com',  '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'CANDIDATE', 'ACTIVE',    now() - interval '35 days'),
+  ('00000000-0000-0000-0000-0000000000d4', 'Diego Ramos',      'diego.ramos@exemplo.com',   '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'CANDIDATE', 'ACTIVE',    now() - interval '30 days'),
   -- conta suspensa, para exercitar o bloqueio de login (M2.5)
-  ('00000000-0000-0000-0000-0000000000d5', 'Elisa Prado',      'elisa.prado@exemplo.com',   'hashed:U2VuaGFAMTIz', 'CANDIDATE', 'SUSPENDED', now() - interval '25 days');
+  ('00000000-0000-0000-0000-0000000000d5', 'Elisa Prado',      'elisa.prado@exemplo.com',   '$2b$10$jtbEa/R3KrPUwBu1xitW/uWaln/Fwcdi13hsR1K1G4D2nHzpE59TC', 'CANDIDATE', 'SUSPENDED', now() - interval '25 days');
 
 -- ----------------------------- Perfis de empresa -----------------------------
 -- Mistura de status de verificação: 3 verificadas, 1 pendente, 1 recusada.

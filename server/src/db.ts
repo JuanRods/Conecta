@@ -60,6 +60,48 @@ export async function queryOne<T = unknown>(
   return rows[0] ?? null;
 }
 
+/**
+ * Cliente transacional: as mesmas assinaturas `query`/`queryOne`, mas ligadas a
+ * uma ÚNICA conexão. Usado dentro de `withTransaction` para que várias escritas
+ * sejam atômicas (ou todas confirmam, ou todas revertem).
+ */
+export interface Tx {
+  query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+  queryOne<T = unknown>(sql: string, params?: unknown[]): Promise<T | null>;
+}
+
+/**
+ * Executa `fn` dentro de uma transação (BEGIN/COMMIT, ROLLBACK em erro),
+ * reservando UMA conexão do pool. Garante atomicidade de operações com várias
+ * escritas (ex.: moderar uma vaga + auditar + notificar).
+ */
+export async function withTransaction<T>(
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  const tx: Tx = {
+    async query<R = unknown>(sql: string, params: unknown[] = []) {
+      const result = await client.query(sql, params as never[]);
+      return result.rows as R[];
+    },
+    async queryOne<R = unknown>(sql: string, params: unknown[] = []) {
+      const rows = await tx.query<R>(sql, params);
+      return rows[0] ?? null;
+    },
+  };
+  try {
+    await client.query("BEGIN");
+    const out = await fn(tx);
+    await client.query("COMMIT");
+    return out;
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 /** (Re)cria o schema a partir de schema.sql. */
 export async function migrate(): Promise<void> {
   const sql = readFileSync(join(here, "schema.sql"), "utf8");

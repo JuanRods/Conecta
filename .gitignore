@@ -18,3 +18,8 @@ blob-report
 .env
 .env.*
 !.env.example
+
+# Artefatos locais (verificação em navegador, logs de dev)
+.browserhome
+.logs
+.kiro/artifacts

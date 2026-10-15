@@ -14,9 +14,26 @@
 
 const BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+const SESSION_KEY = "conecta.auth.session";
+
 /** Indica se a API real está configurada. */
 export function apiEnabled(): boolean {
   return BASE_URL.length > 0;
+}
+
+/**
+ * Lê o token JWT da sessão persistida (gravada pelo authService após o login).
+ * Enviado no header Authorization para que o backend aplique autenticação/RBAC.
+ */
+function authHeader(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return {};
+    const token = (JSON.parse(raw) as { token?: string }).token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 export class ApiError extends Error {
@@ -38,6 +55,7 @@ async function request<T>(
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...authHeader(),
       ...(init.headers ?? {}),
     },
   });
