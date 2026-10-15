@@ -10,8 +10,8 @@ Plataforma web de empregos **inclusiva** para Pessoas com Deficiência (PcD), co
 |------|-----------|--------|
 | 0 | Fundação do projeto (React + TS + Vite, testes) | ✅ |
 | 1 | Base de acessibilidade (temas, tour guiado, componentes, preferências) | ✅ |
-| 2 | Autenticação e RBAC | ⏳ |
-| 3 | Área pública e busca de vagas | ⏳ |
+| 2 | Autenticação e RBAC | ✅ |
+| 3 | Área pública e busca de vagas | ✅ |
 | 4 | Perfil Candidato | ⏳ |
 | 5 | Perfil Empresa | ⏳ |
 | 6 | Painel do Administrador (moderação) | ⏳ |
@@ -38,13 +38,32 @@ npm run build    # build de produção
 npm test         # testes unitários + acessibilidade (axe)
 ```
 
+## Busca pública de vagas (Fase 3)
+
+- 🔍 Busca por **palavra-chave, localização, modalidade, nível, área** e
+  **recursos de acessibilidade** — sem necessidade de conta.
+- 📣 Quantidade de resultados anunciada em região **`aria-live`**.
+- 🔗 Filtros refletidos na **URL** (busca compartilhável e navegação de retorno).
+- 🏷️ Página de detalhe com **selos de acessibilidade** da vaga.
+- 🔒 Login solicitado **apenas no momento da candidatura** (P2.3).
+- ✅ Busca expõe somente vagas **aprovadas** (`APPROVED`), espelhando a regra de
+  moderação do backend (P2.2 / M1).
+- 🧭 **Navegação guiada** dedicada ao fluxo de busca de vagas.
+
+> O serviço de vagas (`src/jobs/jobService.ts`) é um mock que persiste em
+> `localStorage`, com um catálogo-semente de vagas. Sua interface foi desenhada
+> para ser trocada por um cliente HTTP real (`GET /jobs`, `GET /jobs/:id`) sem
+> alterar os componentes.
+
 ## Estrutura
 
 ```
 src/
 ├─ accessibility/   # contexto de preferências, tour guiado, aria-live, focus trap
-├─ components/      # Layout, Button, Modal, Logo, controles de a11y
-├─ pages/           # páginas (Home + placeholders das próximas fases)
+├─ auth/            # contexto de autenticação, RBAC, serviço mock (Fase 2)
+├─ jobs/            # domínio de vagas, serviço de busca, selos de acessibilidade
+├─ components/      # Layout, Button, Field, Modal, Logo, controles de a11y
+├─ pages/           # Home, autenticação, busca e detalhe de vagas
 ├─ styles/          # tokens de design e CSS global (temas)
-└─ test/            # setup e testes de acessibilidade
+└─ test/            # setup e testes (acessibilidade, auth, vagas)
 ```

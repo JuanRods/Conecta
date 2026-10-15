@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { PreferencesProvider } from "../accessibility/PreferencesContext";
 import { AnnouncerProvider } from "../accessibility/Announcer";
 import { GuidedTourProvider } from "../accessibility/GuidedTour";
+import { AuthProvider } from "../auth/AuthContext";
 import { Layout } from "../components/Layout";
 import { HomePage } from "../pages/HomePage";
 
@@ -14,9 +15,11 @@ function renderApp() {
     <PreferencesProvider>
       <AnnouncerProvider>
         <GuidedTourProvider>
-          <MemoryRouter initialEntries={["/"]}>
-            <Layout />
-          </MemoryRouter>
+          <AuthProvider>
+            <MemoryRouter initialEntries={["/"]}>
+              <Layout />
+            </MemoryRouter>
+          </AuthProvider>
         </GuidedTourProvider>
       </AnnouncerProvider>
     </PreferencesProvider>,

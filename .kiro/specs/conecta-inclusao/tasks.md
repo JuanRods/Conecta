@@ -40,11 +40,25 @@
 
 ## Fase 3 — Área Pública e Busca
 
-- [ ] 3.1 Modelar `Job` e filtros (modalidade, área, nível, recursos de acessibilidade). _(P2)_
-- [ ] 3.2 Endpoint de busca pública (apenas vagas aprovadas). _(P2, M1)_
-- [ ] 3.3 Home com busca e resultados com `aria-live`. _(P2, A3)_
-- [ ] 3.4 Página de detalhe da vaga com selos de acessibilidade. _(P2)_
-- [ ] 3.5 Tour guiado de busca de vagas. _(A5)_
+- [x] 3.1 Modelar `Job` e filtros (modalidade, área, nível, recursos de acessibilidade). _(P2)_
+- [x] 3.2 Endpoint de busca pública (apenas vagas aprovadas). _(P2, M1)_
+- [x] 3.3 Home com busca e resultados com `aria-live`. _(P2, A3)_
+- [x] 3.4 Página de detalhe da vaga com selos de acessibilidade. _(P2)_
+- [x] 3.5 Tour guiado de busca de vagas. _(A5)_
+
+> **Fase 3 implementada.** Busca pública acessível em `src/pages/JobsPage.tsx`
+> (filtros por palavra-chave, local, modalidade, nível, área e recursos de
+> acessibilidade; resultados anunciados via `aria-live`; filtros refletidos na
+> URL). Detalhe em `src/pages/JobDetailPage.tsx` com selos de acessibilidade,
+> exigindo login apenas no momento da candidatura (P2.3). Domínio e serviço
+> mock em `src/jobs/` — a busca expõe somente vagas `APPROVED` (P2.2 / M1).
+> Testes em `src/test/jobs.test.tsx`. Ambiente agora com acesso a npm:
+> `npm test` (18 testes) e `npm run build` passam.
+>
+> Correções de base aproveitadas nesta fase (regressões que impediam a suíte de
+> rodar): guarda em `GuidedTour` para `scrollIntoView` ausente no jsdom,
+> `AuthProvider` no teste de acessibilidade (Layout passou a usar `useAuth` na
+> Fase 2) e declarações de tipo para `jest-axe`/`vitest` em `src/test/*.d.ts`.
 
 ## Fase 4 — Perfil Candidato
 
