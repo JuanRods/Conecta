@@ -56,7 +56,9 @@ describe("Fluxo de autenticação", () => {
 
     await user.type(screen.getByLabelText(/nome completo/i), "Maria Silva");
     await user.type(screen.getByLabelText(/e-mail/i), "maria@exemplo.com");
-    await user.type(screen.getByLabelText(/senha/i), "Senha@123");
+    // Âncora "^senha": casa o campo "Senha" e evita o aria-label
+    // "Requisitos da senha" da lista de regras.
+    await user.type(screen.getByLabelText(/^senha/i), "Senha@123");
     await user.click(screen.getByRole("button", { name: /criar conta/i }));
 
     await waitFor(() =>

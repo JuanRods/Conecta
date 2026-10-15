@@ -100,7 +100,8 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
     const el = document.querySelector<HTMLElement>(step.target);
     if (!el) return;
     el.classList.add("tour-highlight");
-    el.scrollIntoView({ block: "center", behavior: "auto" });
+    // scrollIntoView não existe em alguns ambientes (ex.: jsdom nos testes).
+    el.scrollIntoView?.({ block: "center", behavior: "auto" });
     return () => el.classList.remove("tour-highlight");
   }, [active, step]);
 

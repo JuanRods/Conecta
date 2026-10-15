@@ -1,0 +1,66 @@
+.job-detail {
+  padding-block: var(--space-6);
+  max-width: 56rem;
+}
+
+.job-detail__back {
+  margin: 0 0 var(--space-4);
+}
+
+.job-detail__head h1 {
+  margin: 0 0 var(--space-2);
+}
+
+.job-detail__company {
+  margin: 0 0 var(--space-4);
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+.job-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.job-detail__facts dt {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-fg-muted);
+  margin-bottom: var(--space-1);
+}
+
+.job-detail__facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.job-detail__section {
+  margin-top: var(--space-6);
+}
+
+.job-detail__section h2 {
+  margin-bottom: var(--space-3);
+}
+
+.job-detail__muted {
+  color: var(--color-fg-muted);
+}
+
+.job-detail__cta {
+  margin-top: var(--space-8);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.job-detail__cta .btn {
+  margin-bottom: var(--space-3);
+}

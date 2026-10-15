@@ -1,0 +1,129 @@
+.jobs {
+  padding-block: var(--space-6);
+}
+
+.jobs__head h1 {
+  margin: 0 0 var(--space-3);
+}
+
+.jobs__lead {
+  max-width: 48rem;
+  color: var(--color-fg-muted);
+  margin: 0 0 var(--space-4);
+}
+
+/* ---------- Formulário de busca ---------- */
+
+.jobs__form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin: var(--space-6) 0;
+}
+
+.jobs__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+}
+
+.jobs__fieldset,
+.jobs__features {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+
+.jobs__fieldset > legend,
+.jobs__features > legend {
+  font-weight: 600;
+  padding-inline: var(--space-2);
+}
+
+.jobs__checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-2) var(--space-4);
+}
+
+.jobs__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  cursor: pointer;
+}
+
+.jobs__check input {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.jobs__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* ---------- Resultados ---------- */
+
+.jobs__results {
+  margin-top: var(--space-6);
+}
+
+.jobs__empty {
+  color: var(--color-fg-muted);
+}
+
+.jobs__list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.job-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.job-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.25rem;
+}
+
+.job-card__title a {
+  color: var(--color-primary);
+}
+
+.job-card__meta {
+  margin: 0 0 var(--space-3);
+  color: var(--color-fg-muted);
+  font-size: 0.95rem;
+}
+
+.job-card__company {
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.job-card__desc {
+  margin: 0;
+}
+
+.job-card__cta {
+  margin: var(--space-4) 0 0;
+}
+
+.job-card__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  font-weight: 600;
+}

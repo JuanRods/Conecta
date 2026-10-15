@@ -69,8 +69,14 @@ export function HomePage() {
       >
         <h2 id="busca-titulo">Buscar vagas</h2>
         <p>
-          A busca pública de vagas será implementada na Fase 3. Esta área já
-          está preparada como marco de navegação acessível.
+          Pesquise oportunidades por palavra-chave, localização, modalidade e
+          recursos de acessibilidade. Você não precisa de conta para buscar — o
+          login é solicitado apenas no momento da candidatura.
+        </p>
+        <p>
+          <Button variant="primary" onClick={() => navigate("/vagas")}>
+            Ir para a busca de vagas
+          </Button>
         </p>
       </section>
 

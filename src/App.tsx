@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { HomePage } from "./pages/HomePage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { JobsPage } from "./pages/JobsPage";
+import { JobDetailPage } from "./pages/JobDetailPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
@@ -46,16 +48,11 @@ const router = createBrowserRouter([
         ),
       },
 
+      // --- Área pública: busca e detalhe de vagas (Fase 3) ---
+      { path: "vagas", element: <JobsPage /> },
+      { path: "vagas/:id", element: <JobDetailPage /> },
+
       // --- Áreas públicas das próximas fases ---
-      {
-        path: "vagas",
-        element: (
-          <PlaceholderPage
-            title="Vagas"
-            phase="Fase 3 — Área pública e busca"
-          />
-        ),
-      },
       {
         path: "para-empresas",
         element: (
