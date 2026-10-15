@@ -25,11 +25,18 @@
 
 ## Fase 2 — Autenticação e RBAC
 
-- [ ] 2.1 Modelar `User` e papéis; migrações do banco. _(P1)_
-- [ ] 2.2 Endpoints de registro (candidato/empresa), login, recuperação de senha. _(P1)_
-- [ ] 2.3 Middleware de autorização por papel (RBAC) no backend. _(P1, NF2)_
-- [ ] 2.4 Telas acessíveis de cadastro/login com validação e foco em erros. _(P1, A3)_
-- [ ] 2.5 Tour guiado do fluxo de cadastro. _(A5)_
+- [x] 2.1 Modelar `User` e papéis (CANDIDATE/COMPANY/ADMIN); tipos de domínio. _(P1)_
+- [x] 2.2 Serviço de registro (candidato/empresa), login e recuperação de senha. _(P1)_
+- [x] 2.3 Autorização por papel (RBAC): AuthContext, hasRole e guarda de rota RequireAuth. _(P1, NF2)_
+- [x] 2.4 Telas acessíveis de cadastro/login com validação, resumo de erros e foco. _(P1, A3)_
+- [x] 2.5 Tour guiado do fluxo de cadastro. _(A5)_
+
+> ⚠️ **Nota de ambiente:** sem backend no sandbox (INTEGRATIONS_ONLY), a
+> autenticação usa um serviço MOCK que persiste em localStorage e simula os
+> endpoints do design (`/auth/register`, `/auth/login`, `/auth/forgot-password`).
+> A interface `authService` foi desenhada para troca direta por um cliente HTTP
+> real. Um admin seed (`admin@conectainclusao.org` / `Admin@123`) é criado para
+> permitir testar a moderação na Fase 6.
 
 ## Fase 3 — Área Pública e Busca
 

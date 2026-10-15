@@ -1,13 +1,26 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
 import { AccessibilityControls } from "./AccessibilityControls";
+import { Button } from "./Button";
+import { useAuth, dashboardPathForRole } from "../auth/AuthContext";
+import { useAnnouncer } from "../accessibility/Announcer";
 import "./Layout.css";
 
 /**
  * Estrutura global com marcos semânticos (A1) e skip link (A2).
- * header > nav / main / footer.
+ * header > nav / main / footer. A navegação reflete o estado de autenticação.
  */
 export function Layout() {
+  const { isAuthenticated, user, logout } = useAuth();
+  const { announce } = useAnnouncer();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    announce("Você saiu da sua conta.");
+    navigate("/");
+  }
+
   return (
     <>
       <a className="skip-link" href="#conteudo-principal">
@@ -27,7 +40,22 @@ export function Layout() {
           <nav aria-label="Navegação principal" className="site-nav">
             <NavLink to="/vagas">Vagas</NavLink>
             <NavLink to="/para-empresas">Para empresas</NavLink>
-            <NavLink to="/entrar">Entrar</NavLink>
+            {isAuthenticated && user ? (
+              <>
+                <NavLink to={dashboardPathForRole(user.role)}>
+                  Meu painel
+                </NavLink>
+                <Button
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className="site-nav__logout"
+                >
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <NavLink to="/entrar">Entrar</NavLink>
+            )}
           </nav>
         </div>
         <div className="site-header__a11y">

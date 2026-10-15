@@ -1,0 +1,46 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.field__label {
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.field__required {
+  color: var(--color-error-fg);
+}
+
+.field__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-fg-muted);
+}
+
+.field__input {
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  color: var(--color-fg);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.field__input::placeholder {
+  color: var(--color-fg-muted);
+}
+
+.field__input--error {
+  border-color: var(--color-error-fg);
+}
+
+.field__error {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-error-fg);
+}

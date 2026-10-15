@@ -4,6 +4,7 @@ import { App } from "./App";
 import { PreferencesProvider } from "./accessibility/PreferencesContext";
 import { AnnouncerProvider } from "./accessibility/Announcer";
 import { GuidedTourProvider } from "./accessibility/GuidedTour";
+import { AuthProvider } from "./auth/AuthContext";
 import "./styles/global.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -11,7 +12,9 @@ createRoot(document.getElementById("root")!).render(
     <PreferencesProvider>
       <AnnouncerProvider>
         <GuidedTourProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </GuidedTourProvider>
       </AnnouncerProvider>
     </PreferencesProvider>
