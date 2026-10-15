@@ -9,6 +9,10 @@
   display: grid;
   gap: var(--space-4);
   min-width: 0;
+  /* Coluna central mais estreita, como o feed do LinkedIn (leitura confortável) */
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
 }
 
 .feed-card {
@@ -17,6 +21,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
+  /* Sombra sutil para dar o relevo de cartão do feed do LinkedIn */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Destaque com a faixa da marca à esquerda */
@@ -86,13 +92,20 @@
 .feed-job {
   display: flex;
   gap: var(--space-4);
-  padding: var(--space-4) 0;
+  padding: var(--space-4);
+  margin-inline: calc(-1 * var(--space-4));
   border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: background-color 0.12s ease;
+}
+
+/* Linha de vaga vira "clicável" ao passar o mouse, como no LinkedIn */
+.feed-job:hover {
+  background: var(--color-surface-2);
 }
 
 .feed-job:last-of-type {
   border-bottom: 0;
-  padding-bottom: 0;
 }
 
 .feed-job__logo {
@@ -131,6 +144,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-6);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .sidebar-card__title {

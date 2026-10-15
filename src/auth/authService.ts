@@ -242,16 +242,34 @@ async function apiCall<T>(fn: () => Promise<T>): Promise<T> {
     return await fn();
   } catch (err) {
     if (err instanceof ApiError) {
-      const code =
+      // Códigos de negócio que a UI já sabe explicar são preservados.
+      if (
         err.code === "INVALID_CREDENTIALS" ||
         err.code === "ACCOUNT_SUSPENDED" ||
         err.code === "EMAIL_IN_USE" ||
         err.code === "WEAK_PASSWORD" ||
         err.code === "NOT_FOUND"
-          ? err.code
-          : "INVALID_CREDENTIALS";
-      throw new AuthError(code, err.message);
+      ) {
+        throw new AuthError(err.code, err.message);
+      }
+      // Erro inesperado do servidor (ex.: 500 por banco indisponível): NÃO é
+      // "senha incorreta". Mensagem honesta para não confundir o usuário.
+      if (err.status >= 500) {
+        throw new AuthError(
+          "SERVER_ERROR",
+          "O servidor encontrou um erro ao processar o login. " +
+            "Tente novamente em instantes.",
+        );
+      }
+      throw new AuthError("INVALID_CREDENTIALS", err.message);
     }
-    throw err;
+    // Falha de transporte (API fora do ar, CORS, DNS, rede): o fetch lança um
+    // TypeError. Antes isso virava a mensagem genérica de "senha incorreta";
+    // agora deixamos claro que é um problema de conexão com o servidor.
+    throw new AuthError(
+      "NETWORK",
+      "Não foi possível conectar ao servidor. Verifique se a API está no ar " +
+        "(VITE_API_URL) e tente novamente.",
+    );
   }
 }

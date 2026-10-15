@@ -66,14 +66,47 @@ escritas (moderação, auditoria e notificações). Detalhes do modelo de dados,
 segurança, do seed e das contas de teste em
 [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
 
-## Busca pública de vagas (Fase 3)
+## Acesso e login
+
+> **Login é obrigatório.** Toda a aplicação (home, busca de vagas, painéis) fica
+> atrás de autenticação: ao abrir o app sem sessão, você é levado direto para a
+> tela **Entrar** (`/entrar`). Após o login, a raiz (`/`) encaminha para o
+> painel do seu papel (candidato → `/painel`, empresa → `/empresa`, admin →
+> `/admin`). Quem ainda não tem conta usa **Criar conta** (`/cadastro`).
+
+### Dois modos de dados (importante para o login funcionar)
+
+O frontend decide a origem dos dados por `VITE_API_URL` (`src/api/client.ts`):
+
+- **Com a API/PostgreSQL** (recomendado): defina `VITE_API_URL` em `.env.local`
+  **e deixe a API rodando** (`npm run api`). O login usa as contas do banco
+  (seed) — veja a tabela em [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
+- **Offline (localStorage)**: sem `VITE_API_URL`, o app roda sem backend. Nesse
+  modo **só a conta de administrador** semeada localmente existe
+  (`admin@conectainclusao.org` / `Admin@123`); as demais contas de demonstração
+  vivem apenas no banco.
+
+> ⚠️ Se você definir `VITE_API_URL` mas **a API não estiver no ar**, o login
+> falha com **"Não foi possível conectar ao servidor…"** (não é senha errada).
+> Suba a API (`npm run api`) ou remova o `.env.local` para usar o modo offline.
+
+### Contas de demonstração (modo com banco)
+
+| Perfil | E-mail | Senha |
+|--------|--------|-------|
+| Admin | `admin@conectainclusao.org` | `Admin@123` |
+| Candidata | `ana.souza@exemplo.com` | `Senha@123` |
+| Empresa | `rh@techinclui.com.br` | `Senha@123` |
+
+## Busca de vagas (Fase 3)
 
 - 🔍 Busca por **palavra-chave, localização, modalidade, nível, área** e
-  **recursos de acessibilidade** — sem necessidade de conta.
+  **recursos de acessibilidade** (requer login).
 - 📣 Quantidade de resultados anunciada em região **`aria-live`**.
 - 🔗 Filtros refletidos na **URL** (busca compartilhável e navegação de retorno).
 - 🏷️ Página de detalhe com **selos de acessibilidade** da vaga.
-- 🔒 Login solicitado **apenas no momento da candidatura** (P2.3).
+- 🔒 Acesso autenticado: todo o app exige login (a candidatura confirma o
+  consentimento de acomodações no envio — P2.3).
 - ✅ Busca expõe somente vagas **aprovadas** (`APPROVED`), espelhando a regra de
   moderação do backend (P2.2 / M1).
 - 🧭 **Navegação guiada** dedicada ao fluxo de busca de vagas.

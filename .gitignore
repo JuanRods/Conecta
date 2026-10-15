@@ -23,3 +23,8 @@ blob-report
 .browserhome
 .logs
 .kiro/artifacts
+.abhome
+.abrun
+.absock
+.agent-browser
+.tmp

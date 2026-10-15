@@ -40,10 +40,10 @@ export function Layout() {
           </Link>
 
           <nav aria-label="Navegação principal" className="site-nav">
-            <NavLink to="/vagas">Vagas</NavLink>
-            <NavLink to="/para-empresas">Para empresas</NavLink>
             {isAuthenticated && user ? (
               <>
+                <NavLink to="/vagas">Vagas</NavLink>
+                <NavLink to="/para-empresas">Para empresas</NavLink>
                 <NavLink to={dashboardPathForRole(user.role)}>
                   Meu painel
                 </NavLink>
