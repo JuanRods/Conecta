@@ -11,8 +11,8 @@
 
 .cols-3 {
   display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr) 19rem;
-  gap: var(--space-6);
+  grid-template-columns: 16rem minmax(0, 1fr) 20rem;
+  gap: var(--space-4);
   align-items: start;
   padding-block: var(--space-6);
 }

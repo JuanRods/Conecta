@@ -1,12 +1,12 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { HomePage } from "./pages/HomePage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { RequireAuth } from "./auth/RequireAuth";
+import { RootRedirect } from "./auth/RootRedirect";
 
 /**
  * Code-splitting por rota (NF3): as páginas públicas de vagas e os painéis por
@@ -121,9 +121,11 @@ const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      { index: true, element: <HomePage /> },
+      // A raiz exige login: encaminha para o painel (autenticado) ou para a
+      // tela de login (visitante). Todo usuário passa pelo login primeiro.
+      { index: true, element: <RootRedirect /> },
 
-      // --- Autenticação (Fase 2) ---
+      // --- Autenticação (Fase 2) — ÚNICAS rotas públicas ---
       { path: "entrar", element: <LoginPage /> },
       { path: "cadastro", element: <RegisterPage /> },
       { path: "recuperar-senha", element: <ForgotPasswordPage /> },
@@ -169,18 +171,26 @@ const router = createBrowserRouter([
         ],
       },
 
-      // --- Área pública: busca e detalhe de vagas (Fase 3) ---
-      { path: "vagas", element: L(<JobsPage />) },
-      { path: "vagas/:id", element: L(<JobDetailPage />) },
+      // --- Busca e detalhe de vagas (agora exige login) ---
+      {
+        path: "vagas",
+        element: <RequireAuth>{L(<JobsPage />)}</RequireAuth>,
+      },
+      {
+        path: "vagas/:id",
+        element: <RequireAuth>{L(<JobDetailPage />)}</RequireAuth>,
+      },
 
-      // --- Página institucional pública para empresas ---
+      // --- Página institucional para empresas (agora exige login) ---
       {
         path: "para-empresas",
         element: (
-          <PlaceholderPage
-            title="Para empresas"
-            phase="Crie sua conta de empresa para publicar vagas inclusivas."
-          />
+          <RequireAuth>
+            <PlaceholderPage
+              title="Para empresas"
+              phase="Crie sua conta de empresa para publicar vagas inclusivas."
+            />
+          </RequireAuth>
         ),
       },
       {

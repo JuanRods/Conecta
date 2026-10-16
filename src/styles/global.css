@@ -16,7 +16,7 @@ body {
   font-family: var(--font-sans);
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
-  background-color: var(--color-bg);
+  background-color: var(--color-canvas);
   color: var(--color-fg);
   -webkit-font-smoothing: antialiased;
   transition:
@@ -49,7 +49,11 @@ body {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-link);
+}
+
+a:hover {
+  color: var(--color-link-hover);
 }
 
 h1,
@@ -94,7 +98,7 @@ h4 {
 /* Container de página */
 .container {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1128px;
   margin: 0 auto;
   padding: 0 var(--space-4);
 }

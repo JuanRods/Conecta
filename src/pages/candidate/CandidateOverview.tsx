@@ -227,18 +227,29 @@ export function CandidateOverview() {
                 style={{ listStyle: "none", margin: 0, padding: 0 }}
               >
                 {recommended.map((job) => (
-                  <li key={job.id} className="feed-job">
-                    <span className="feed-job__logo" aria-hidden="true">
+                  <li key={job.id} className="entity-card">
+                    <span className="entity-card__media" aria-hidden="true">
                       {job.companyName.slice(0, 2).toUpperCase()}
                     </span>
-                    <div className="feed-job__body">
-                      <h4 className="feed-job__title">
+                    <div className="entity-card__body">
+                      <h4 className="entity-card__name">
                         <Link to={`/vagas/${job.id}`}>{job.title}</Link>
                       </h4>
-                      <p className="feed-job__meta">
-                        {job.companyName} · {job.location} ·{" "}
-                        {MODALITY_LABELS[job.modality]}
+                      <p className="entity-card__subtitle">
+                        {job.companyName}
                       </p>
+                      <p className="entity-card__meta">
+                        {job.location} · {MODALITY_LABELS[job.modality]}
+                      </p>
+                      <div className="entity-card__action">
+                        <Link
+                          className="btn btn--secondary btn--sm"
+                          to={`/vagas/${job.id}`}
+                        >
+                          Ver vaga
+                          <span className="sr-only"> {job.title}</span>
+                        </Link>
+                      </div>
                     </div>
                   </li>
                 ))}

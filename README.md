@@ -46,13 +46,30 @@ npx playwright install --with-deps   # 1ª vez
 npm run test:e2e
 ```
 
+### Instalação das dependências (frontend + API)
+
+As dependências do **frontend** (raiz) e da **API** (`server/`) são instaladas
+separadamente. Instale as duas de uma vez:
+
+```bash
+npm run setup   # = npm install  +  npm run api:install
+```
+
+> ℹ️ Se você rodar só `npm install`, as dependências da **API** não são
+> instaladas e `npm run api` falha com `'tsx' não é reconhecido` /
+> `tsx: not found`. Para evitar isso, os scripts `api`, `db:*` e `test:api`
+> agora **instalam as dependências da API automaticamente** quando faltam.
+> Ainda assim, prefira `npm run setup` logo após clonar.
+
 ### Com banco de dados (PostgreSQL)
+
+**Linux/macOS (sem Docker):**
 
 ```bash
 export CONECTA_PG_HOME="$PWD/.pgsql"                          # sandbox: HOME é só-leitura
 ./scripts/postgres.sh install && ./scripts/postgres.sh init  # sem Docker
 cp server/.env.example server/.env                           # credenciais do banco + JWT_SECRET
-npm run api:install        # dependências da API
+npm run setup              # dependências do frontend + API
 npm run db:reset           # schema + dados de demonstração (hashes bcrypt)
 npm run api                # API em http://localhost:3001
 cp .env.example .env.local # aponta o frontend para a API
@@ -60,20 +77,106 @@ npm run dev
 npm run test:api           # 22 testes de integração contra o Postgres real
 ```
 
+**Windows (PowerShell):** o `scripts/postgres.sh` é um script bash e **não roda
+no Windows**. Use Docker para o banco:
+
+```powershell
+# 1. Banco via Docker (usuário/banco "conecta", sem senha — auth trust)
+docker run --name conecta-pg -e POSTGRES_USER=conecta -e POSTGRES_DB=conecta `
+  -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 -d postgres:15
+
+# 2. Credenciais (os valores do exemplo já batem com o Docker acima)
+Copy-Item server\.env.example server\.env
+
+# 3. Dependências (frontend + API) e banco
+npm run setup
+npm run db:reset
+
+# 4. API e, em outro terminal, o frontend
+npm run api                      # http://localhost:3001
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+> Sem Docker no Windows, instale o PostgreSQL nativamente e ajuste `server/.env`
+> com o seu usuário/banco/senha reais (veja [`docs/banco-de-dados.md`](docs/banco-de-dados.md)).
+
+### Rodar a API e o frontend ao mesmo tempo
+
+Com o banco de dados já no ar (passos acima), você tem duas formas:
+
+**Um único comando (recomendado)** — sobe os dois juntos, com logs prefixados
+`[api]`/`[web]`; `Ctrl+C` encerra ambos:
+
+```bash
+npm run start:all
+# API  → http://localhost:3001
+# Front → http://localhost:5173
+```
+
+**Ou em dois terminais separados:**
+
+```bash
+# Terminal 1
+npm run api        # http://localhost:3001
+
+# Terminal 2
+npm run dev        # http://localhost:5173
+```
+
+> `start:all` usa o [`concurrently`](https://www.npmjs.com/package/concurrently)
+> e funciona em Windows, macOS e Linux. Lembre-se de ter o `.env.local`
+> (`VITE_API_URL=http://localhost:3001`) para o frontend consumir a API, e o
+> banco rodando — senão a API não sobe e o login falha com
+> "Não foi possível conectar ao servidor".
+
 A API é **real e completa**: senhas com **bcrypt**, sessão por **JWT** e
 **RBAC** nas rotas de administração, com **transações** nas operações de várias
 escritas (moderação, auditoria e notificações). Detalhes do modelo de dados, da
 segurança, do seed e das contas de teste em
 [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
 
-## Busca pública de vagas (Fase 3)
+## Acesso e login
+
+> **Login é obrigatório.** Toda a aplicação (home, busca de vagas, painéis) fica
+> atrás de autenticação: ao abrir o app sem sessão, você é levado direto para a
+> tela **Entrar** (`/entrar`). Após o login, a raiz (`/`) encaminha para o
+> painel do seu papel (candidato → `/painel`, empresa → `/empresa`, admin →
+> `/admin`). Quem ainda não tem conta usa **Criar conta** (`/cadastro`).
+
+### Dois modos de dados (importante para o login funcionar)
+
+O frontend decide a origem dos dados por `VITE_API_URL` (`src/api/client.ts`):
+
+- **Com a API/PostgreSQL** (recomendado): defina `VITE_API_URL` em `.env.local`
+  **e deixe a API rodando** (`npm run api`). O login usa as contas do banco
+  (seed) — veja a tabela em [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
+- **Offline (localStorage)**: sem `VITE_API_URL`, o app roda sem backend. Nesse
+  modo **só a conta de administrador** semeada localmente existe
+  (`admin@conectainclusao.org` / `Admin@123`); as demais contas de demonstração
+  vivem apenas no banco.
+
+> ⚠️ Se você definir `VITE_API_URL` mas **a API não estiver no ar**, o login
+> falha com **"Não foi possível conectar ao servidor…"** (não é senha errada).
+> Suba a API (`npm run api`) ou remova o `.env.local` para usar o modo offline.
+
+### Contas de demonstração (modo com banco)
+
+| Perfil | E-mail | Senha |
+|--------|--------|-------|
+| Admin | `admin@conectainclusao.org` | `Admin@123` |
+| Candidata | `ana.souza@exemplo.com` | `Senha@123` |
+| Empresa | `rh@techinclui.com.br` | `Senha@123` |
+
+## Busca de vagas (Fase 3)
 
 - 🔍 Busca por **palavra-chave, localização, modalidade, nível, área** e
-  **recursos de acessibilidade** — sem necessidade de conta.
+  **recursos de acessibilidade** (requer login).
 - 📣 Quantidade de resultados anunciada em região **`aria-live`**.
 - 🔗 Filtros refletidos na **URL** (busca compartilhável e navegação de retorno).
 - 🏷️ Página de detalhe com **selos de acessibilidade** da vaga.
-- 🔒 Login solicitado **apenas no momento da candidatura** (P2.3).
+- 🔒 Acesso autenticado: todo o app exige login (a candidatura confirma o
+  consentimento de acomodações no envio — P2.3).
 - ✅ Busca expõe somente vagas **aprovadas** (`APPROVED`), espelhando a regra de
   moderação do backend (P2.2 / M1).
 - 🧭 **Navegação guiada** dedicada ao fluxo de busca de vagas.

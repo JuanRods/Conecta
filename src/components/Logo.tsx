@@ -3,10 +3,17 @@ import "./Logo.css";
 /**
  * Logo "Conecta Inclusão": três figuras entrelaçadas (roxo, teal, laranja).
  * SVG decorativo com rótulo textual acessível ao lado.
+ *
+ * `compact` reduz a marca para uso na barra de topo (estilo LinkedIn),
+ * mantendo o mesmo rótulo acessível "Conecta Inclusão".
  */
-export function Logo() {
+export function Logo({ compact = false }: { compact?: boolean } = {}) {
+  const classes = ["logo", compact ? "logo--compact" : ""]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <span className="logo">
+    <span className={classes}>
       <svg
         className="logo__mark"
         viewBox="0 0 120 60"

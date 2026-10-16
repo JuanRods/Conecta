@@ -16,3 +16,14 @@
 .logo__text strong {
   color: var(--color-primary);
 }
+
+/* Variante compacta para a barra de topo (oculta o texto em telas estreitas). */
+.logo--compact .logo__text {
+  font-size: 1rem;
+}
+
+@media (max-width: 48rem) {
+  .logo--compact .logo__text {
+    display: none;
+  }
+}

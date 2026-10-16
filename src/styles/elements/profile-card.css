@@ -6,15 +6,16 @@
  */
 
 .profile-card {
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius); /* ~8px, como os cards do LinkedIn */
   overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 
 /* Capa com o degradê da marca */
 .profile-card__cover {
-  height: 4.5rem;
+  height: 3.5rem;
   background: linear-gradient(
     120deg,
     var(--brand-purple) 0%,
@@ -29,23 +30,27 @@
 
 /* Avatar sobreposto à capa */
 .profile-card__avatar {
-  margin: -2.25rem auto var(--space-3);
+  margin: -2.5rem auto var(--space-2);
 }
 
 .profile-card__name {
   margin: 0 0 var(--space-1);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .profile-card__headline {
-  margin: 0 0 var(--space-2);
-  font-size: 0.95rem;
-  color: var(--color-fg-muted);
+  margin: 0 0 var(--space-1);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-fg);
 }
 
 .profile-card__meta {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
   color: var(--color-fg-muted);
 }
 
@@ -74,7 +79,7 @@
   padding: var(--space-2) var(--space-4);
   text-decoration: none;
   color: var(--color-fg);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 

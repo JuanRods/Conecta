@@ -22,14 +22,25 @@
   flex-wrap: wrap;
 }
 
+/* Painéis no mesmo visual de cartão do LinkedIn: superfície branca sobre o
+ * canvas cinza, cantos ~8px e sombra sutil. */
 .panel {
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   padding: var(--space-6);
   margin-top: var(--space-6);
+  box-shadow: var(--shadow-card);
 }
 
 .panel h2 {
   margin-top: 0;
+}
+
+.panel a {
+  color: var(--color-link);
+}
+
+.panel a:hover {
+  color: var(--color-link-hover);
 }
