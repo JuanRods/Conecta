@@ -100,7 +100,9 @@
   text-decoration: none;
   font-weight: 500;
   border-radius: var(--radius);
-  border-bottom: 2px solid transparent;
+  /* Indicador reservado como borda transparente de 3px para não deslocar o
+   * layout ao marcar o item atual. */
+  border-bottom: 3px solid transparent;
 }
 
 .site-nav__item:hover {
@@ -118,9 +120,17 @@
   white-space: nowrap;
 }
 
+/* Página atual: pista não dependente de cor (barra inferior mais grossa +
+ * rótulo em negrito) para distinguir claramente de :hover, que apenas
+ * clareia o texto e adiciona um fundo sutil. Mantém WCAG 1.4.1. */
 .site-nav__item.active {
   color: var(--color-fg);
+  font-weight: 700;
   border-bottom-color: var(--color-fg);
+}
+
+.site-nav__item.active .site-nav__label {
+  font-weight: 700;
 }
 
 /* ---------- Área do usuário ---------- */

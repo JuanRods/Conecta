@@ -23,6 +23,14 @@
   cursor: not-allowed;
 }
 
+/* Variante compacta e arredondada, como os botões "Conectar" do LinkedIn.
+ * Mantém a altura mínima de alvo de toque (--touch-target) por acessibilidade. */
+.btn--sm {
+  padding: var(--space-1) var(--space-4);
+  font-size: 0.85rem;
+  border-radius: 999px;
+}
+
 .btn--primary {
   background: var(--color-primary);
   color: var(--color-primary-fg);

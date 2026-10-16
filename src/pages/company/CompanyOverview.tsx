@@ -50,7 +50,7 @@ export function CompanyOverview() {
     <div className="feed comp-overview">
       {/* Cartão de status: perfil incompleto ou situação da verificação */}
       {!hasProfile ? (
-        <div className="feed-card feed-card--highlight">
+        <div className="feed-card feed-card--highlight" role="note">
           <h3 className="feed-card__title">Complete o perfil da empresa</h3>
           <p className="feed-card__text">
             Complete o perfil da sua empresa para transmitir confiança e começar
