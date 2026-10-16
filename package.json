@@ -7,6 +7,8 @@
   "scripts": {
     "setup": "npm install && npm run api:install",
     "dev": "vite",
+    "start:all": "concurrently --names \"api,web\" --prefix-colors \"magenta,cyan\" --kill-others-on-fail \"npm:api\" \"npm:dev\"",
+    "dev:all": "npm run start:all",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -38,6 +40,7 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "concurrently": "^10.0.6",
     "jest-axe": "^9.0.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.2",

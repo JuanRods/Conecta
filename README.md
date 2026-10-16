@@ -101,6 +101,35 @@ npm run dev
 > Sem Docker no Windows, instale o PostgreSQL nativamente e ajuste `server/.env`
 > com o seu usuário/banco/senha reais (veja [`docs/banco-de-dados.md`](docs/banco-de-dados.md)).
 
+### Rodar a API e o frontend ao mesmo tempo
+
+Com o banco de dados já no ar (passos acima), você tem duas formas:
+
+**Um único comando (recomendado)** — sobe os dois juntos, com logs prefixados
+`[api]`/`[web]`; `Ctrl+C` encerra ambos:
+
+```bash
+npm run start:all
+# API  → http://localhost:3001
+# Front → http://localhost:5173
+```
+
+**Ou em dois terminais separados:**
+
+```bash
+# Terminal 1
+npm run api        # http://localhost:3001
+
+# Terminal 2
+npm run dev        # http://localhost:5173
+```
+
+> `start:all` usa o [`concurrently`](https://www.npmjs.com/package/concurrently)
+> e funciona em Windows, macOS e Linux. Lembre-se de ter o `.env.local`
+> (`VITE_API_URL=http://localhost:3001`) para o frontend consumir a API, e o
+> banco rodando — senão a API não sobe e o login falha com
+> "Não foi possível conectar ao servidor".
+
 A API é **real e completa**: senhas com **bcrypt**, sessão por **JWT** e
 **RBAC** nas rotas de administração, com **transações** nas operações de várias
 escritas (moderação, auditoria e notificações). Detalhes do modelo de dados, da
