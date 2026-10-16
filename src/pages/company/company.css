@@ -6,6 +6,13 @@
  * peças exclusivas da empresa.
  */
 
+/* --- Visão geral da empresa ---
+ * Reaproveita o visual de feed (.feed/.feed-card). As estatísticas ficam
+ * embutidas em um cartão, então zeramos a margem inferior padrão do grid. */
+.comp-overview .stats {
+  margin-bottom: 0;
+}
+
 /* Cabeçalho da lista de vagas (título + botão "Nova vaga") */
 .comp-jobs__head {
   display: flex;
