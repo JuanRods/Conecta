@@ -46,19 +46,60 @@ npx playwright install --with-deps   # 1ª vez
 npm run test:e2e
 ```
 
+### Instalação das dependências (frontend + API)
+
+As dependências do **frontend** (raiz) e da **API** (`server/`) são instaladas
+separadamente. Instale as duas de uma vez:
+
+```bash
+npm run setup   # = npm install  +  npm run api:install
+```
+
+> ℹ️ Se você rodar só `npm install`, as dependências da **API** não são
+> instaladas e `npm run api` falha com `'tsx' não é reconhecido` /
+> `tsx: not found`. Para evitar isso, os scripts `api`, `db:*` e `test:api`
+> agora **instalam as dependências da API automaticamente** quando faltam.
+> Ainda assim, prefira `npm run setup` logo após clonar.
+
 ### Com banco de dados (PostgreSQL)
+
+**Linux/macOS (sem Docker):**
 
 ```bash
 export CONECTA_PG_HOME="$PWD/.pgsql"                          # sandbox: HOME é só-leitura
 ./scripts/postgres.sh install && ./scripts/postgres.sh init  # sem Docker
 cp server/.env.example server/.env                           # credenciais do banco + JWT_SECRET
-npm run api:install        # dependências da API
+npm run setup              # dependências do frontend + API
 npm run db:reset           # schema + dados de demonstração (hashes bcrypt)
 npm run api                # API em http://localhost:3001
 cp .env.example .env.local # aponta o frontend para a API
 npm run dev
 npm run test:api           # 22 testes de integração contra o Postgres real
 ```
+
+**Windows (PowerShell):** o `scripts/postgres.sh` é um script bash e **não roda
+no Windows**. Use Docker para o banco:
+
+```powershell
+# 1. Banco via Docker (usuário/banco "conecta", sem senha — auth trust)
+docker run --name conecta-pg -e POSTGRES_USER=conecta -e POSTGRES_DB=conecta `
+  -e POSTGRES_HOST_AUTH_METHOD=trust -p 5432:5432 -d postgres:15
+
+# 2. Credenciais (os valores do exemplo já batem com o Docker acima)
+Copy-Item server\.env.example server\.env
+
+# 3. Dependências (frontend + API) e banco
+npm run setup
+npm run db:reset
+
+# 4. API e, em outro terminal, o frontend
+npm run api                      # http://localhost:3001
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+> Sem Docker no Windows, instale o PostgreSQL nativamente e ajuste `server/.env`
+> com o seu usuário/banco/senha reais (veja [`docs/banco-de-dados.md`](docs/banco-de-dados.md)).
 
 A API é **real e completa**: senhas com **bcrypt**, sessão por **JWT** e
 **RBAC** nas rotas de administração, com **transações** nas operações de várias
