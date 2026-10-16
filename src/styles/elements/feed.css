@@ -17,12 +17,12 @@
 
 .feed-card {
   position: relative;
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  border-radius: var(--radius); /* ~8px, como os cards do LinkedIn */
+  padding: var(--space-4) var(--space-6);
   /* Sombra sutil para dar o relevo de cartão do feed do LinkedIn */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card);
 }
 
 /* Destaque com a faixa da marca à esquerda */
@@ -31,13 +31,17 @@
 }
 
 .feed-card__title {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-1);
   font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .feed-card__text {
   margin: 0 0 var(--space-4);
   color: var(--color-fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .feed-card__actions {
@@ -79,20 +83,33 @@
   gap: var(--space-2);
   align-items: baseline;
   justify-content: space-between;
+  margin-bottom: var(--space-3);
 }
 
 .feed-head h2,
 .feed-head h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Link "Ver todas" do cabeçalho de seção, no tom azul do LinkedIn */
+.feed-head a {
+  color: var(--color-link);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.feed-head a:hover {
+  color: var(--color-link-hover);
 }
 
 /* --- Item de vaga no feed --- */
 
 .feed-job {
   display: flex;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   margin-inline: calc(-1 * var(--space-4));
   border-bottom: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -128,28 +145,140 @@
 
 .feed-job__title {
   margin: 0 0 var(--space-1);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Título de vaga como link azul do LinkedIn, com hover/foco visíveis */
+.feed-job__title a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.feed-job__title a:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
 }
 
 .feed-job__meta {
   margin: 0 0 var(--space-2);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
   color: var(--color-fg-muted);
+}
+
+/* --- Cartão de pessoa/entidade (reutilizável) ---------------------------
+ * Padrão das seções "Pessoas que talvez você conheça" e vagas que combinam:
+ * avatar/logo + nome + subtítulo + linha de apoio + área de ação.
+ * Usa elementos reais (<button>/<a>) para manter a acessibilidade.
+ */
+.entity-card {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  margin-inline: calc(-1 * var(--space-4));
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: background-color 0.12s ease;
+}
+
+.entity-card:hover {
+  background: var(--color-surface-2);
+}
+
+.entity-card:last-of-type {
+  border-bottom: 0;
+}
+
+/* Avatar/logo da entidade (foto redonda ou bloco de iniciais) */
+.entity-card__media {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-secondary);
+  font-weight: 800;
+}
+
+/* Variante redonda para pessoas (como as fotos de perfil do LinkedIn) */
+.entity-card__media--round {
+  border-radius: 50%;
+}
+
+.entity-card__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.entity-card__name {
+  margin: 0 0 var(--space-1);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.entity-card__name a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.entity-card__name a:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+.entity-card__subtitle {
+  margin: 0 0 var(--space-1);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-fg);
+}
+
+.entity-card__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--color-fg-muted);
+}
+
+/* Área de ação à direita (ex.: botão "Conectar" / "Ver vaga") */
+.entity-card__action {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 /* --- Cartão da barra lateral --- */
 
 .sidebar-card {
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius); /* ~8px, como os cards do LinkedIn */
   padding: var(--space-4) var(--space-6);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card);
 }
 
 .sidebar-card__title {
   margin: 0 0 var(--space-3);
   font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Links dentro da barra lateral no azul do LinkedIn */
+.sidebar-list a {
+  color: var(--color-link);
+}
+
+.sidebar-list a:hover {
+  color: var(--color-link-hover);
 }
 
 .sidebar-list {
