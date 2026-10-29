@@ -6,6 +6,13 @@
  * exclusivas da moderação (tabela de auditoria e espaçamento de seções).
  */
 
+/* --- Visão geral do admin ---
+ * Reaproveita o visual de feed (.feed/.feed-card). As estatísticas ficam
+ * embutidas em um cartão, então zeramos a margem inferior padrão do grid. */
+.admin-overview .stats {
+  margin-bottom: 0;
+}
+
 .admin-section {
   margin-top: var(--space-8);
 }

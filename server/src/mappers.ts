@@ -152,6 +152,82 @@ export function toModerationAction(row: {
   };
 }
 
+export interface PostCommentRow {
+  id: string;
+  author_id: string;
+  author_name: string;
+  content: string;
+  created_at: Date | string;
+}
+
+export interface PostRow {
+  id: string;
+  author_id: string;
+  author_name: string;
+  author_role: string;
+  author_headline: string | null;
+  content: string;
+  created_at: Date | string;
+  liked_by: string[] | null;
+  comments: PostCommentRow[] | null;
+}
+
+/** Converte uma linha agregada de publicação (com curtidas e comentários). */
+export function toPost(row: PostRow) {
+  return {
+    id: row.id,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    authorRole: row.author_role,
+    authorHeadline: row.author_headline ?? undefined,
+    content: row.content,
+    createdAt: iso(row.created_at),
+    likedBy: row.liked_by ?? [],
+    comments: (row.comments ?? []).map((c) => ({
+      id: c.id,
+      authorId: c.author_id,
+      authorName: c.author_name,
+      content: c.content,
+      createdAt: iso(c.created_at),
+    })),
+  };
+}
+
+export interface CampaignRow {
+  id: string;
+  company_id: string;
+  company_name: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  call_to_action: string;
+  link: string | null;
+  tag: string;
+  status: string;
+  review_reason: string | null;
+  created_at: Date | string;
+  published_at: Date | string | null;
+}
+
+/** Converte uma campanha (card de ação da empresa) para o formato da UI. */
+export function toCampaign(row: CampaignRow) {
+  return {
+    id: row.id,
+    companyId: row.company_id,
+    companyName: row.company_name,
+    title: row.title,
+    subtitle: row.subtitle,
+    description: row.description,
+    callToAction: row.call_to_action,
+    link: row.link ?? undefined,
+    tag: row.tag,
+    status: row.status,
+    reviewReason: row.review_reason ?? undefined,
+    createdAt: iso(row.created_at),
+    publishedAt: row.published_at ? iso(row.published_at) : undefined,
+  };
+}
+
 function iso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : String(value);
 }

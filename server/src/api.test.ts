@@ -298,6 +298,201 @@ describe("CRUD de vagas da empresa (E2)", () => {
   });
 });
 
+describe("Feed de publicações (posts)", () => {
+  it("lista o feed semeado com curtidas e comentários agregados", async () => {
+    const res = await request(app).get("/posts").expect(200);
+    expect(res.body.length).toBeGreaterThanOrEqual(3);
+    const first = res.body[0];
+    expect(first).toHaveProperty("likedBy");
+    expect(Array.isArray(first.likedBy)).toBe(true);
+    expect(first).toHaveProperty("comments");
+    expect(Array.isArray(first.comments)).toBe(true);
+    // Resolve o papel e o título do autor
+    expect(first).toHaveProperty("authorName");
+    expect(first).toHaveProperty("authorRole");
+  });
+
+  it("cria uma publicação e a traz no topo do feed", async () => {
+    const created = await request(app)
+      .post("/posts")
+      .send({ authorId: CAND_ANA, content: "Minha primeira publicação de teste." })
+      .expect(200);
+    expect(created.body.content).toBe("Minha primeira publicação de teste.");
+    expect(created.body.likedBy).toEqual([]);
+    expect(created.body.comments).toEqual([]);
+
+    const feed = await request(app).get("/posts").expect(200);
+    expect(feed.body[0].id).toBe(created.body.id);
+  });
+
+  it("recusa publicação sem conteúdo", async () => {
+    await request(app)
+      .post("/posts")
+      .send({ authorId: CAND_ANA, content: "   " })
+      .expect(400);
+  });
+
+  it("curtir é idempotente por usuário e alterna ao repetir", async () => {
+    const created = await request(app)
+      .post("/posts")
+      .send({ authorId: CAND_ANA, content: "Post para curtir." })
+      .expect(200);
+
+    const liked = await request(app)
+      .post(`/posts/${created.body.id}/like`)
+      .send({ userId: CAND_BRUNO })
+      .expect(200);
+    expect(liked.body.likedBy).toContain(CAND_BRUNO);
+
+    // repetir remove a curtida (toggle)
+    const unliked = await request(app)
+      .post(`/posts/${created.body.id}/like`)
+      .send({ userId: CAND_BRUNO })
+      .expect(200);
+    expect(unliked.body.likedBy).not.toContain(CAND_BRUNO);
+  });
+
+  it("adiciona comentário resolvendo o nome do autor", async () => {
+    const created = await request(app)
+      .post("/posts")
+      .send({ authorId: CAND_ANA, content: "Post para comentar." })
+      .expect(200);
+
+    const commented = await request(app)
+      .post(`/posts/${created.body.id}/comments`)
+      .send({ authorId: CAND_BRUNO, content: "Comentário de teste." })
+      .expect(200);
+    expect(commented.body.comments).toHaveLength(1);
+    expect(commented.body.comments[0].content).toBe("Comentário de teste.");
+    expect(commented.body.comments[0].authorName).toBeTruthy();
+  });
+
+  it("o autor pode excluir sua publicação", async () => {
+    const created = await request(app)
+      .post("/posts")
+      .send({ authorId: CAND_ANA, content: "Post a excluir." })
+      .expect(200);
+
+    await request(app)
+      .delete(`/posts/${created.body.id}?userId=${CAND_ANA}`)
+      .expect(204);
+
+    const feed = await request(app).get("/posts").expect(200);
+    expect(feed.body.find((p: { id: string }) => p.id === created.body.id)).toBeUndefined();
+  });
+});
+
+describe("Campanhas das empresas (vitrine + moderação)", () => {
+  it("a vitrine pública mostra apenas campanhas APPROVED", async () => {
+    const res = await request(app).get("/campaigns").expect(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(
+      res.body.every((c: { status: string }) => c.status === "APPROVED"),
+    ).toBe(true);
+    // resolve o nome da empresa autora
+    expect(res.body[0].companyName).toBeTruthy();
+  });
+
+  it("empresa cria campanha em PENDING e ela não aparece na vitrine", async () => {
+    const created = await request(app)
+      .post("/campaigns")
+      .send({
+        companyId: COMPANY_TECH,
+        title: "Semana da Acessibilidade",
+        subtitle: "TechInclui · Evento",
+        description: "Palestras e oficinas abertas sobre tecnologia assistiva.",
+        callToAction: "Inscrever-se",
+        tag: "Evento",
+      })
+      .expect(200);
+    expect(created.body.status).toBe("PENDING");
+
+    const vitrine = await request(app).get("/campaigns").expect(200);
+    expect(
+      vitrine.body.find((c: { id: string }) => c.id === created.body.id),
+    ).toBeUndefined();
+
+    // aparece na lista da própria empresa
+    const mine = await request(app)
+      .get(`/companies/${COMPANY_TECH}/campaigns`)
+      .expect(200);
+    expect(mine.body.some((c: { id: string }) => c.id === created.body.id)).toBe(
+      true,
+    );
+  });
+
+  it("admin aprova a campanha e ela passa a aparecer na vitrine (RBAC)", async () => {
+    const created = await request(app)
+      .post("/campaigns")
+      .send({
+        companyId: COMPANY_TECH,
+        title: "Trilha de Mentoria Inclusiva",
+        description: "Mentoria para pessoas com deficiência em início de carreira.",
+        tag: "Educação",
+      })
+      .expect(200);
+
+    // sem token de admin: negado
+    await request(app)
+      .patch(`/admin/campaigns/${created.body.id}/review`)
+      .send({ action: "approve" })
+      .expect(401);
+
+    const approved = await request(app)
+      .patch(`/admin/campaigns/${created.body.id}/review`)
+      .set(asAdmin())
+      .send({ action: "approve", adminId: ADMIN, adminName: "Admin Teste" })
+      .expect(200);
+    expect(approved.body.status).toBe("APPROVED");
+    expect(approved.body.publishedAt).toBeTruthy();
+
+    const vitrine = await request(app).get("/campaigns").expect(200);
+    expect(
+      vitrine.body.some((c: { id: string }) => c.id === created.body.id),
+    ).toBe(true);
+  });
+
+  it("admin recusa a campanha registrando o motivo", async () => {
+    const created = await request(app)
+      .post("/campaigns")
+      .send({
+        companyId: COMPANY_TECH,
+        title: "Campanha incompleta",
+        description: "Texto que precisa de ajustes.",
+        tag: "Compromisso",
+      })
+      .expect(200);
+
+    const rejected = await request(app)
+      .patch(`/admin/campaigns/${created.body.id}/review`)
+      .set(asAdmin())
+      .send({
+        action: "reject",
+        reason: "Detalhe os recursos de acessibilidade.",
+        adminId: ADMIN,
+        adminName: "Admin",
+      })
+      .expect(200);
+    expect(rejected.body.status).toBe("REJECTED");
+    expect(rejected.body.reviewReason).toMatch(/acessibilidade/i);
+  });
+
+  it("inclui campanhas pendentes na fila de moderação", async () => {
+    const res = await request(app)
+      .get("/admin/moderation/queue")
+      .set(asAdmin())
+      .expect(200);
+    expect(Array.isArray(res.body.campaigns)).toBe(true);
+  });
+
+  it("recusa criar campanha sem título ou descrição", async () => {
+    await request(app)
+      .post("/campaigns")
+      .send({ companyId: COMPANY_TECH, title: "" })
+      .expect(400);
+  });
+});
+
 describe("LGPD (NF2)", () => {
   it("exporta os dados do titular", async () => {
     const res = await request(app).get(`/privacy/${CAND_ANA}/export`).expect(200);

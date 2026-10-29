@@ -21,6 +21,15 @@ test.describe("Navegação por teclado", () => {
 
   test("alterna o tema pelo teclado", async ({ page }) => {
     await page.goto("/");
+
+    // Abre o menu único de acessibilidade pelo teclado…
+    const menuButton = page.getByRole("button", {
+      name: /abrir menu de acessibilidade/i,
+    });
+    await menuButton.focus();
+    await page.keyboard.press("Enter");
+
+    // …e ativa o modo escuro.
     const toggle = page.getByRole("button", { name: /modo escuro/i });
     await toggle.focus();
     await page.keyboard.press("Enter");

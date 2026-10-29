@@ -1,5 +1,6 @@
 import { jobService } from "../jobs/jobService";
 import { companyService } from "../company/companyService";
+import { campaignService } from "../campaigns/campaignService";
 import { reportService } from "../candidate/reportService";
 import { authService } from "../auth/authService";
 import type {
@@ -76,16 +77,19 @@ export const moderationService = {
     jobs: number;
     companies: number;
     reports: number;
+    campaigns: number;
   }> {
-    const [jobs, companies, reports] = await Promise.all([
+    const [jobs, companies, reports, campaigns] = await Promise.all([
       jobService.listPending(),
       companyService.listPendingVerification(),
       reportService.listPending(),
+      campaignService.listPending(),
     ]);
     return simulateLatency({
       jobs: jobs.length,
       companies: companies.length,
       reports: reports.length,
+      campaigns: campaigns.length,
     });
   },
 

@@ -19,7 +19,15 @@ blob-report
 .env.*
 !.env.example
 
+# Cópia duplicada/antiga do projeto (não deve ir para o repositório)
+/Conecta-feat-login-obrigatorio-e-fix-auth/
+
 # Artefatos locais (verificação em navegador, logs de dev)
 .browserhome
 .logs
 .kiro/artifacts
+.abhome
+.abrun
+.absock
+.agent-browser
+.tmp

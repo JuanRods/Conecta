@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useFocusTrap } from "./useFocusTrap";
 import { useAnnouncer } from "./Announcer";
+import { cancelSpeech, isSpeechSupported, speak } from "./speech";
 import "./GuidedTour.css";
 
 /**
@@ -71,22 +72,45 @@ function markCompleted(id: string) {
   addToList(COMPLETED_KEY, id);
 }
 
+const AUDIO_KEY = "conecta.tours.audio";
+
 export function GuidedTourProvider({ children }: { children: ReactNode }) {
   const [tour, setTour] = useState<Tour | null>(null);
   const [index, setIndex] = useState(0);
+  // Assistência auditiva: lê cada passo em voz alta (pt-BR). A preferência é
+  // lembrada entre sessões. Só é oferecida se o navegador suportar síntese.
+  const speechSupported = isSpeechSupported();
+  const [audioOn, setAudioOn] = useState<boolean>(
+    () => speechSupported && localStorage.getItem(AUDIO_KEY) === "true",
+  );
   const panelRef = useRef<HTMLDivElement>(null);
   const { announce } = useAnnouncer();
 
   const close = useCallback(() => {
+    cancelSpeech();
     setTour(null);
     setIndex(0);
   }, []);
 
   const finish = useCallback(() => {
+    cancelSpeech();
     if (tour) markCompleted(tour.id);
     announce("Navegação guiada concluída");
     close();
   }, [tour, announce, close]);
+
+  const toggleAudio = useCallback(() => {
+    setAudioOn((on) => {
+      const next = !on;
+      try {
+        localStorage.setItem(AUDIO_KEY, String(next));
+      } catch {
+        /* armazenamento indisponível */
+      }
+      if (!next) cancelSpeech();
+      return next;
+    });
+  }, []);
 
   const startTour = useCallback(
     (t: Tour) => {
@@ -135,6 +159,17 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
     }
   }, [active, index, step, announce]);
 
+  // Assistência auditiva: lê o passo atual em voz alta quando o áudio está
+  // ligado. Reage a mudanças de passo e à ativação do recurso. Cancela a fala
+  // ao sair do tour (cleanup) para não continuar falando "no vazio".
+  useEffect(() => {
+    if (!active || !audioOn || !step) return;
+    speak(
+      `Passo ${index + 1} de ${tour?.steps.length}. ${step.title}. ${step.description}`,
+    );
+    return () => cancelSpeech();
+  }, [active, audioOn, index, step, tour?.steps.length]);
+
   if (!active || !tour || !step) {
     return (
       <GuidedTourContext.Provider value={{ startTour, isTourCompleted, suppressTour, isTourSuppressed }}>
@@ -158,9 +193,28 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
         aria-labelledby="tour-title"
         aria-describedby="tour-desc"
       >
-        <p className="tour__progress">
-          Passo {index + 1} de {tour.steps.length}
-        </p>
+        <div className="tour__header">
+          <p className="tour__progress">
+            Passo {index + 1} de {tour.steps.length}
+          </p>
+          {speechSupported && (
+            <button
+              type="button"
+              className="tour__audio"
+              onClick={toggleAudio}
+              aria-pressed={audioOn}
+              aria-label={
+                audioOn
+                  ? "Desativar leitura em voz alta dos passos"
+                  : "Ativar leitura em voz alta dos passos"
+              }
+              title="Ler em voz alta"
+            >
+              <span aria-hidden="true">{audioOn ? "🔊" : "🔈"}</span>
+              <span>{audioOn ? "Ouvindo" : "Ouvir"}</span>
+            </button>
+          )}
+        </div>
         <h2 id="tour-title" className="tour__title">
           {step.title}
         </h2>

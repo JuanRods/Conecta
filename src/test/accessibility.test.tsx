@@ -48,6 +48,10 @@ describe("Base de acessibilidade", () => {
   it("alterna entre tema claro e escuro e persiste a escolha", async () => {
     const user = userEvent.setup();
     renderApp();
+    // As preferências ficam agrupadas no menu único de acessibilidade.
+    await user.click(
+      screen.getByRole("button", { name: /abrir menu de acessibilidade/i }),
+    );
     const toggle = screen.getByRole("button", { name: /modo escuro/i });
 
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
@@ -59,6 +63,9 @@ describe("Base de acessibilidade", () => {
   it("aumenta o tamanho da fonte via controle de preferências", async () => {
     const user = userEvent.setup();
     renderApp();
+    await user.click(
+      screen.getByRole("button", { name: /abrir menu de acessibilidade/i }),
+    );
     const increase = screen.getByRole("button", {
       name: /aumentar tamanho da fonte/i,
     });

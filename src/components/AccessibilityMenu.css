@@ -1,0 +1,208 @@
+/**
+ * ELEMENTO: Menu de Acessibilidade (botão flutuante + painel)
+ * -----------------------------------------------------------------------------
+ * Reúne todas as preferências de apresentação (tema, contraste, fonte) em um
+ * único menu acionado por botão flutuante fixo no canto inferior direito.
+ * Fica acima do widget VLibras (canto direito) sem colidir com o ícone de
+ * Navegação Guiada (canto inferior esquerdo).
+ */
+
+.a11y-menu {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--space-4) + 84px); /* acima do widget VLibras */
+  z-index: 950;
+}
+
+/* --- Botão flutuante --- */
+.a11y-menu__fab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+
+  border: 2px solid var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.a11y-menu__fab:hover {
+  transform: scale(1.04);
+}
+
+.a11y-menu__fab-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* --- Painel de opções --- */
+.a11y-menu__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(48px + var(--space-3));
+
+  width: min(calc(100vw - 2 * var(--space-4)), 20rem);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+
+  background: var(--color-card);
+  color: var(--color-fg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.a11y-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.a11y-menu__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.a11y-menu__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.a11y-menu__close:hover {
+  background: var(--color-surface-2);
+  color: var(--color-fg);
+}
+
+/* --- Grupos de opções --- */
+.a11y-menu__group + .a11y-menu__group {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.a11y-menu__group-title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-fg-muted);
+}
+
+/* --- Opção alternável (tema / contraste) --- */
+.a11y-menu__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.a11y-menu__option:hover {
+  background: var(--color-surface-2);
+}
+
+.a11y-menu__option[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  border-color: var(--color-primary);
+}
+
+.a11y-menu__option-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.a11y-menu__option-label {
+  flex: 1 1 auto;
+}
+
+.a11y-menu__state {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+/* --- Controle de fonte --- */
+.a11y-menu__font {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.a11y-menu__font-btn {
+  flex: 1 1 auto;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.a11y-menu__font-btn:hover {
+  background: var(--color-surface-2);
+}
+
+.a11y-menu__font-btn--reset {
+  flex: 1.3 1 auto;
+  color: var(--color-primary);
+}
+
+.a11y-menu__hint {
+  margin: var(--space-3) 0 0;
+  font-size: 0.82rem;
+  color: var(--color-fg-muted);
+}
+
+/* Em telas estreitas o botão vira apenas ícone para economizar espaço */
+@media (max-width: 480px) {
+  .a11y-menu__fab-text {
+    display: none;
+  }
+
+  .a11y-menu__fab {
+    min-width: 48px;
+    justify-content: center;
+    padding: var(--space-2);
+  }
+}

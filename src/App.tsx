@@ -1,18 +1,24 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { HomePage } from "./pages/HomePage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { RequireAuth } from "./auth/RequireAuth";
+import { RootRedirect } from "./auth/RootRedirect";
 
 /**
  * Code-splitting por rota (NF3): as páginas públicas de vagas e os painéis por
  * papel são carregados sob demanda, reduzindo o bundle inicial. Home, login e
  * cadastro ficam no chunk inicial para primeira pintura rápida.
  */
+const FeedPage = lazy(() =>
+  import("./pages/FeedPage").then((m) => ({ default: m.FeedPage })),
+);
+const CampaignsPage = lazy(() =>
+  import("./pages/CampaignsPage").then((m) => ({ default: m.CampaignsPage })),
+);
 const JobsPage = lazy(() =>
   import("./pages/JobsPage").then((m) => ({ default: m.JobsPage })),
 );
@@ -69,6 +75,11 @@ const CompanyJobsPage = lazy(() =>
     default: m.CompanyJobsPage,
   })),
 );
+const CompanyCampaignsPage = lazy(() =>
+  import("./pages/company/CompanyCampaignsPage").then((m) => ({
+    default: m.CompanyCampaignsPage,
+  })),
+);
 const JobFormPage = lazy(() =>
   import("./pages/company/JobFormPage").then((m) => ({
     default: m.JobFormPage,
@@ -121,9 +132,11 @@ const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      { index: true, element: <HomePage /> },
+      // A raiz exige login: encaminha para o painel (autenticado) ou para a
+      // tela de login (visitante). Todo usuário passa pelo login primeiro.
+      { index: true, element: <RootRedirect /> },
 
-      // --- Autenticação (Fase 2) ---
+      // --- Autenticação (Fase 2) — ÚNICAS rotas públicas ---
       { path: "entrar", element: <LoginPage /> },
       { path: "cadastro", element: <RegisterPage /> },
       { path: "recuperar-senha", element: <ForgotPasswordPage /> },
@@ -154,6 +167,7 @@ const router = createBrowserRouter([
           { path: "vagas/nova", element: L(<JobFormPage />) },
           { path: "vagas/:id/editar", element: L(<JobFormPage />) },
           { path: "vagas/:id/candidaturas", element: L(<JobApplicationsPage />) },
+          { path: "campanhas", element: L(<CompanyCampaignsPage />) },
         ],
       },
       {
@@ -169,19 +183,26 @@ const router = createBrowserRouter([
         ],
       },
 
-      // --- Área pública: busca e detalhe de vagas (Fase 3) ---
-      { path: "vagas", element: L(<JobsPage />) },
-      { path: "vagas/:id", element: L(<JobDetailPage />) },
+      // --- Feed principal de publicações (exige login) ---
+      {
+        path: "feed",
+        element: <RequireAuth>{L(<FeedPage />)}</RequireAuth>,
+      },
 
-      // --- Página institucional pública para empresas ---
+      // --- Busca e detalhe de vagas (agora exige login) ---
+      {
+        path: "vagas",
+        element: <RequireAuth>{L(<JobsPage />)}</RequireAuth>,
+      },
+      {
+        path: "vagas/:id",
+        element: <RequireAuth>{L(<JobDetailPage />)}</RequireAuth>,
+      },
+
+      // --- Vitrine pública de campanhas das empresas (exige login) ---
       {
         path: "para-empresas",
-        element: (
-          <PlaceholderPage
-            title="Para empresas"
-            phase="Crie sua conta de empresa para publicar vagas inclusivas."
-          />
-        ),
+        element: <RequireAuth>{L(<CampaignsPage />)}</RequireAuth>,
       },
       {
         path: "*",

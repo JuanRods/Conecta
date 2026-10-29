@@ -25,6 +25,7 @@ export function CompanyDashboard() {
         </NavLink>
         <NavLink to="/empresa/perfil">Perfil da empresa</NavLink>
         <NavLink to="/empresa/vagas">Minhas vagas</NavLink>
+        <NavLink to="/empresa/campanhas">Campanhas</NavLink>
       </nav>
 
       <div>

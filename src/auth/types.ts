@@ -37,7 +37,9 @@ export class AuthError extends Error {
       | "INVALID_CREDENTIALS"
       | "ACCOUNT_SUSPENDED"
       | "NOT_FOUND"
-      | "WEAK_PASSWORD",
+      | "WEAK_PASSWORD"
+      | "NETWORK"
+      | "SERVER_ERROR",
     message: string,
   ) {
     super(message);

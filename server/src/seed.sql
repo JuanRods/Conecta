@@ -236,3 +236,67 @@ INSERT INTO consents (user_id, version, accepted_at) VALUES
   ('00000000-0000-0000-0000-0000000000d2', '2026-10-15', now() - interval '18 days'),
   ('00000000-0000-0000-0000-0000000000d3', '2026-10-15', now() - interval '16 days'),
   ('00000000-0000-0000-0000-0000000000d4', '2026-10-15', now() - interval '14 days');
+
+-- ----------------------- Feed de publicações (posts) -------------------------
+INSERT INTO posts (id, author_id, content, created_at) VALUES
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000c1',
+   'Estamos com vagas abertas para pessoas desenvolvedoras front-end! Nosso time trabalha com acessibilidade desde o design (WCAG 2.1 AA) e oferece horário flexível e tecnologia assistiva. Bora construir uma web para todas as pessoas? 💜',
+   now() - interval '2 days'),
+  ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a1',
+   'Dica da semana: ao se candidatar, você pode pedir acomodações para o processo seletivo (intérprete de Libras, tempo adicional, material em alto contraste). Informar uma deficiência é opcional e sigiloso. Seus direitos vêm primeiro. ♿',
+   now() - interval '3 days'),
+  ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000d2',
+   'Depois de alguns meses buscando, consegui uma vaga afirmativa para PcD por aqui! Obrigado à comunidade pelas dicas de currículo acessível. Não desistam — a vaga certa existe. 🚀',
+   now() - interval '4 days');
+
+INSERT INTO post_likes (post_id, user_id) VALUES
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d1'),
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d2'),
+  ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000d2'),
+  ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000d1'),
+  ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000c1');
+
+INSERT INTO post_comments (post_id, author_id, content, created_at) VALUES
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d1',
+   'Que oportunidade incrível! Acabei de me candidatar. 🙌', now() - interval '2 days' + interval '2 hours'),
+  ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000c1',
+   'Parabéns! Sucesso nessa nova etapa. 👏', now() - interval '4 days' + interval '1 hour');
+
+-- --------------------- Campanhas / ações das empresas ------------------------
+-- 3 campanhas APPROVED (aparecem na vitrine pública) + 1 PENDING (fila de
+-- moderação) + 1 REJECTED (histórico da empresa).
+INSERT INTO campaigns (id, company_id, title, subtitle, description, call_to_action, link, tag, status, review_reason, created_at, published_at) VALUES
+  ('00000000-0000-0000-0000-00000000a001', '00000000-0000-0000-0000-0000000000c1',
+   'Programa Talentos sem Barreiras',
+   'TechInclui · Contratação afirmativa de pessoas com deficiência',
+   'Abrimos 20 vagas afirmativas em tecnologia com trilha de mentoria, acessibilidade digital garantida (WCAG 2.1 AA) e horário flexível. Todo o processo seletivo oferece intérprete de Libras, materiais em alto contraste e tempo adicional mediante solicitação.',
+   'Quero participar do programa', 'https://techinclui.com.br/talentos', 'Contratação afirmativa',
+   'APPROVED', NULL, now() - interval '12 days', now() - interval '11 days'),
+
+  ('00000000-0000-0000-0000-00000000a002', '00000000-0000-0000-0000-0000000000c2',
+   'Mutirão de Saúde Acessível',
+   'CuidarBem Saúde · Ação comunitária',
+   'Durante todo o mês, nossas unidades oferecem atendimento gratuito com acessibilidade plena: rampas, intérpretes de Libras e profissionais capacitados em comunicação inclusiva. Uma ação para aproximar o cuidado de quem mais precisa.',
+   'Agendar atendimento', 'https://cuidarbem.com.br/mutirao', 'Ação comunitária',
+   'APPROVED', NULL, now() - interval '9 days', now() - interval '8 days'),
+
+  ('00000000-0000-0000-0000-00000000a003', '00000000-0000-0000-0000-0000000000c3',
+   'Centros de Distribuição 100% Acessíveis',
+   'LogAccess · Compromisso de acessibilidade',
+   'Concluímos a adaptação de todos os nossos centros de distribuição: acesso para cadeirantes, estações de trabalho ajustáveis e sinalização inclusiva. Conheça a transformação e venha fazer parte do nosso time.',
+   'Conhecer a iniciativa', NULL, 'Compromisso',
+   'APPROVED', NULL, now() - interval '6 days', now() - interval '5 days'),
+
+  ('00000000-0000-0000-0000-00000000a004', '00000000-0000-0000-0000-0000000000c4',
+   'Bolsas de Capacitação Inclusiva',
+   'EduLivre · Educação',
+   'Vamos oferecer 100 bolsas integrais em cursos de tecnologia com conteúdo audiodescrito e legendado para pessoas com deficiência. As inscrições abrem em breve.',
+   'Entrar na lista de espera', NULL, 'Educação',
+   'PENDING', NULL, now() - interval '1 day', NULL),
+
+  ('00000000-0000-0000-0000-00000000a005', '00000000-0000-0000-0000-0000000000c5',
+   'Campanha Agro Inclusivo',
+   'AgroSempre · Em revisão',
+   'Proposta de ação de inclusão no campo (texto ainda em ajustes de acessibilidade da descrição).',
+   'Saiba mais', NULL, 'Ação comunitária',
+   'REJECTED', 'A descrição precisa detalhar quais recursos de acessibilidade serão oferecidos.', now() - interval '15 days', NULL);

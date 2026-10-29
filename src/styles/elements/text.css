@@ -8,3 +8,16 @@
 .text-muted {
   color: var(--color-fg-muted);
 }
+
+/* Link em destaque no azul do LinkedIn (ex.: títulos clicáveis em cards).
+ * Prefira o estilo global de `a`; use quando precisar reforçar peso/tom. */
+.link-strong {
+  color: var(--color-link);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-strong:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}

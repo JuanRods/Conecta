@@ -5,15 +5,18 @@ import { Button } from "../../components/Button";
 import { AccessibilityBadges } from "../../jobs/AccessibilityBadges";
 import { jobService } from "../../jobs/jobService";
 import { companyService } from "../../company/companyService";
+import { campaignService } from "../../campaigns/campaignService";
 import { moderationService } from "../../admin/moderationService";
 import { MODALITY_LABELS, type Job } from "../../jobs/types";
 import type { Company } from "../../company/types";
+import type { Campaign } from "../../campaigns/types";
 import { ReasonDialog } from "./ReasonDialog";
 
 type Dialog =
   | { kind: "reject-job"; job: Job }
   | { kind: "request-changes"; job: Job }
   | { kind: "reject-company"; company: Company }
+  | { kind: "reject-campaign"; campaign: Campaign }
   | null;
 
 /** Fila de moderação: vagas pendentes e empresas a verificar (M1). */
@@ -22,17 +25,22 @@ export function ModerationQueuePage() {
   const { announce } = useAnnouncer();
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
 
   const admin = user ? { id: user.id, name: user.name } : null;
 
   const refresh = useCallback(async () => {
-    const [pendingJobs, pendingCompanies] = await Promise.all([
-      jobService.listPending(),
-      companyService.listPendingVerification(),
-    ]);
+    const [pendingJobs, pendingCompanies, pendingCampaigns] = await Promise.all(
+      [
+        jobService.listPending(),
+        companyService.listPendingVerification(),
+        campaignService.listPending(),
+      ],
+    );
     setJobs(pendingJobs);
     setCompanies(pendingCompanies);
+    setCampaigns(pendingCampaigns);
   }, []);
 
   useEffect(() => {
@@ -40,10 +48,12 @@ export function ModerationQueuePage() {
     Promise.all([
       jobService.listPending(),
       companyService.listPendingVerification(),
-    ]).then(([j, c]) => {
+      campaignService.listPending(),
+    ]).then(([j, c, ca]) => {
       if (!active) return;
       setJobs(j);
       setCompanies(c);
+      setCampaigns(ca);
     });
     return () => {
       active = false;
@@ -64,7 +74,14 @@ export function ModerationQueuePage() {
     announce(`Empresa "${company.name}" verificada.`);
   }
 
-  if (!jobs || !companies) {
+  async function approveCampaign(campaign: Campaign) {
+    if (!admin) return;
+    await campaignService.approve(admin, campaign.id);
+    await refresh();
+    announce(`Campanha "${campaign.title}" aprovada e publicada.`);
+  }
+
+  if (!jobs || !companies || !campaigns) {
     return <p aria-live="polite">Carregando fila de moderação…</p>;
   }
 
@@ -156,6 +173,61 @@ export function ModerationQueuePage() {
         )}
       </section>
 
+      {/* --- Campanhas pendentes --- */}
+      <section
+        aria-labelledby="mod-campaigns-title"
+        className="admin-section"
+      >
+        <h2 id="mod-campaigns-title">Campanhas aguardando moderação</h2>
+        {campaigns.length === 0 ? (
+          <p className="text-muted">Nenhuma campanha pendente.</p>
+        ) : (
+          <ul className="card-list">
+            {campaigns.map((campaign) => (
+              <li key={campaign.id}>
+                <article
+                  className="card"
+                  aria-labelledby={`mcamp-${campaign.id}`}
+                >
+                  <div className="card__top">
+                    <h3 id={`mcamp-${campaign.id}`} className="card__title">
+                      {campaign.title}
+                    </h3>
+                    <span className="badge badge--warning">
+                      {campaign.tag || "Campanha"}
+                    </span>
+                  </div>
+                  <p className="card__meta">
+                    {campaign.companyName}
+                    {campaign.subtitle ? ` · ${campaign.subtitle}` : ""}
+                  </p>
+                  <p>{campaign.description}</p>
+                  {campaign.callToAction && (
+                    <p className="text-muted">
+                      <strong>Botão:</strong> {campaign.callToAction}
+                      {campaign.link ? ` → ${campaign.link}` : ""}
+                    </p>
+                  )}
+                  <div className="card__actions">
+                    <Button onClick={() => approveCampaign(campaign)}>
+                      Aprovar e publicar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() =>
+                        setDialog({ kind: "reject-campaign", campaign })
+                      }
+                    >
+                      Recusar
+                    </Button>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {/* --- Diálogos de justificativa --- */}
       <ReasonDialog
         isOpen={dialog?.kind === "reject-job"}
@@ -205,6 +277,20 @@ export function ModerationQueuePage() {
             );
             await refresh();
             announce(`Verificação de "${dialog.company.name}" recusada.`);
+          }
+        }}
+      />
+      <ReasonDialog
+        isOpen={dialog?.kind === "reject-campaign"}
+        title="Recusar campanha"
+        label="Explique o motivo da recusa (será enviado à empresa)"
+        confirmText="Recusar campanha"
+        onClose={() => setDialog(null)}
+        onConfirm={async (reason) => {
+          if (admin && dialog?.kind === "reject-campaign") {
+            await campaignService.reject(admin, dialog.campaign.id, reason);
+            await refresh();
+            announce(`Campanha "${dialog.campaign.title}" recusada.`);
           }
         }}
       />

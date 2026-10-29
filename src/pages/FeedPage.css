@@ -1,0 +1,248 @@
+/**
+ * Tela principal de Publicações (feed social).
+ * Reaproveita os elementos do design system (.feed, .feed-card, .profile-card,
+ * .sidebar-card, .badge, .avatar, .cols-3) e adiciona o compositor e o cartão
+ * de publicação.
+ */
+
+.feed__title {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.feed__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ---------------- Compositor de publicação ---------------- */
+
+.composer {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.composer__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.composer__input {
+  flex: 1 1 auto;
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+
+  font: inherit;
+  color: var(--color-fg);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  transition: border-radius 0.15s ease;
+}
+
+/* Quando há texto ou foco, o campo cresce e vira retângulo arredondado */
+.composer__input:focus,
+.composer__input:not(:placeholder-shown) {
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+}
+
+.composer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
+.composer__count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-fg-muted);
+}
+
+/* ---------------- Cartão de publicação ---------------- */
+
+.post-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+
+.post-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.post-card__ident {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.post-card__author {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.post-card__name {
+  font-weight: 800;
+}
+
+.post-card__role {
+  font-size: 0.72rem;
+}
+
+.post-card__headline {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-fg-muted);
+}
+
+.post-card__time {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-fg-muted);
+}
+
+.post-card__remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.post-card__remove:hover {
+  background: var(--color-surface-2);
+}
+
+.post-card__content {
+  margin: var(--space-4) 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.post-card__stats {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-fg-muted);
+}
+
+.post-card__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.post-card__action {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.post-card__action:hover {
+  background: var(--color-surface-2);
+  color: var(--color-fg);
+}
+
+.post-card__action[aria-pressed="true"] {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+/* ---------------- Comentários ---------------- */
+
+.post-card__comments {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.comment {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.comment__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+}
+
+.comment__author {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.comment__text {
+  margin: 2px 0 0;
+  word-break: break-word;
+}
+
+.comment__time {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--color-fg-muted);
+}
+
+.comment-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.comment-form__input {
+  flex: 1 1 auto;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+
+  font: inherit;
+  color: var(--color-fg);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}

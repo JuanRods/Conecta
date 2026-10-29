@@ -187,3 +187,63 @@ CREATE TABLE consents (
   version     TEXT NOT NULL,
   accepted_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ----------------------- Feed de publicações (posts) -------------------------
+-- Rede social da comunidade: qualquer usuário autenticado pode publicar,
+-- curtir e comentar. Curtidas ficam numa tabela de junção (um registro por
+-- pessoa/post) para impedir curtida duplicada. A exclusão do autor remove em
+-- cascata suas publicações, curtidas e comentários.
+
+CREATE TABLE posts (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id  UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  content    TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_posts_created ON posts (created_at DESC);
+CREATE INDEX idx_posts_author  ON posts (author_id);
+
+CREATE TABLE post_likes (
+  post_id  UUID NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
+  user_id  UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  liked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, user_id)
+);
+
+CREATE TABLE post_comments (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id    UUID NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
+  author_id  UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  content    TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_post_comments_post ON post_comments (post_id, created_at);
+
+-- --------------------- Campanhas / ações das empresas ------------------------
+-- Cards amplos que divulgam uma CAMPANHA ou AÇÃO inclusiva da empresa
+-- (ex.: programa de contratação afirmativa, mutirão de acessibilidade).
+-- Fluxo: a empresa cria (status PENDING) e o administrador aprova ou recusa.
+-- Apenas campanhas APPROVED aparecem na vitrine pública "Para empresas".
+
+CREATE TYPE campaign_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+CREATE TABLE campaigns (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id    UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  title         TEXT NOT NULL,
+  subtitle      TEXT NOT NULL DEFAULT '',
+  description   TEXT NOT NULL,
+  call_to_action TEXT NOT NULL DEFAULT '',
+  link          TEXT,
+  tag           TEXT NOT NULL DEFAULT '',
+  status        campaign_status NOT NULL DEFAULT 'PENDING',
+  review_reason TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  published_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_campaigns_status  ON campaigns (status);
+CREATE INDEX idx_campaigns_company ON campaigns (company_id);
+CREATE INDEX idx_campaigns_published ON campaigns (published_at DESC NULLS LAST);

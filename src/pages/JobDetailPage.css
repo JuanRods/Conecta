@@ -23,9 +23,10 @@
   gap: var(--space-4);
   margin: 0;
   padding: var(--space-4);
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 
 .job-detail__facts dt {
@@ -53,12 +54,24 @@
   color: var(--color-fg-muted);
 }
 
+/* Links de navegação/retorno no azul do LinkedIn */
+.job-detail__back a,
+.job-detail__applied a {
+  color: var(--color-link);
+}
+
+.job-detail__back a:hover,
+.job-detail__applied a:hover {
+  color: var(--color-link-hover);
+}
+
 .job-detail__cta {
   margin-top: var(--space-8);
   padding: var(--space-6);
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 
 .job-detail__cta .btn {

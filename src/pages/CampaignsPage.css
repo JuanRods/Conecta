@@ -1,0 +1,165 @@
+/**
+ * Vitrine pública de campanhas/ações das empresas ("Para empresas").
+ * Cards AMPLOS: banner com a marca + corpo com título, descrição e chamada.
+ */
+
+.campaigns {
+  padding-block: var(--space-6);
+}
+
+.campaigns__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.campaigns__head h1 {
+  margin: 0 0 var(--space-2);
+}
+
+.campaigns__lead {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--color-fg-muted);
+  line-height: 1.55;
+}
+
+.campaigns__empty {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--color-fg-muted);
+}
+
+/* Lista de cards amplos: 1 por linha em telas estreitas, 2 em telas largas */
+.campaigns__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 60rem) {
+  .campaigns__list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------------- Card de campanha (amplo) ---------------- */
+
+.campaign-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.campaign-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* Banner da marca com o degradê roxo→teal do Conecta */
+.campaign-card__banner {
+  position: relative;
+  min-height: 7rem;
+  display: flex;
+  align-items: center;
+  padding: var(--space-6);
+  background: linear-gradient(
+    120deg,
+    var(--brand-purple) 0%,
+    var(--brand-teal) 100%
+  );
+}
+
+.campaign-card__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--brand-purple);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+/* Selo da categoria, no canto do banner */
+.campaign-card__tag {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  padding: 4px var(--space-3);
+  border-radius: 999px;
+  background: var(--brand-orange);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.campaign-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: var(--space-6);
+}
+
+.campaign-card__company {
+  margin: 0 0 var(--space-1);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.campaign-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.campaign-card__subtitle {
+  margin: 0 0 var(--space-3);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+}
+
+.campaign-card__desc {
+  margin: 0 0 var(--space-6);
+  line-height: 1.6;
+}
+
+/* Empurra a chamada de ação para o rodapé do card (cards alinhados) */
+.campaign-card__cta {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.campaign-card__cta-static {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+  color: var(--color-primary);
+  font-weight: 700;
+}

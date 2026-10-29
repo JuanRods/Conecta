@@ -38,6 +38,8 @@
   --radius: 0.5rem;
   --radius-lg: 0.75rem;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  /* Sombra suave para cards no estilo LinkedIn (borda tênue + elevação discreta) */
+  --shadow-card: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
 
   /* Alvo de toque mínimo (WCAG 2.5.5) */
   --touch-target: 44px;
@@ -62,6 +64,13 @@
   --color-accent: #b4651d; /* laranja escurecido p/ contraste AA */
 
   --color-focus: #0a66c2;
+
+  /* Fundo em tela e superfícies no estilo LinkedIn */
+  --color-canvas: #f4f2ee; /* cinza-claro da página */
+  --color-card: #ffffff; /* superfície dos cards */
+  --color-link: #0a66c2; /* azul do LinkedIn (igual ao foco) */
+  --color-link-hover: #004182; /* azul escurecido no hover */
+
   --color-success-bg: #e6f4ea;
   --color-success-fg: #1b5e20;
   --color-error-bg: #fdecea;
@@ -85,6 +94,13 @@
   --color-accent: #f0a35a;
 
   --color-focus: #7cc0ff;
+
+  /* Fundo em tela e superfícies no tema escuro */
+  --color-canvas: #0b0f17; /* cinza-escuro da página */
+  --color-card: #171d2b; /* mesma superfície dos cards do tema escuro */
+  --color-link: #7cc0ff; /* azul clareado p/ contraste AA sobre fundo escuro */
+  --color-link-hover: #a9d6ff;
+
   --color-success-bg: #10361c;
   --color-success-fg: #7fe0a0;
   --color-error-bg: #3a1512;
@@ -101,6 +117,12 @@
   --color-primary: #3d0066;
   --color-primary-fg: #ffffff;
   --color-focus: #0040a0;
+
+  /* Canvas/card bem distintos e link com contraste AA sobre o card branco */
+  --color-canvas: #e8e8e8;
+  --color-card: #ffffff;
+  --color-link: #0040a0;
+  --color-link-hover: #002a6b;
 }
 
 [data-theme="dark"][data-contrast="high"] {
@@ -110,4 +132,10 @@
   --color-primary: #e0c3ff;
   --color-primary-fg: #000000;
   --color-focus: #9cccff;
+
+  /* Canvas preto, card quase preto distinto e link azul-claro com contraste AA */
+  --color-canvas: #000000;
+  --color-card: #121212;
+  --color-link: #9cccff;
+  --color-link-hover: #c7e4ff;
 }

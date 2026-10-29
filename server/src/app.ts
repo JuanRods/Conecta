@@ -10,12 +10,16 @@ import {
 } from "./auth.js";
 import {
   toApplication,
+  toCampaign,
   toCompany,
   toJob,
   toModerationAction,
+  toPost,
   toReport,
   toUser,
+  type CampaignRow,
   type JobRow,
+  type PostRow,
 } from "./mappers.js";
 
 /**
@@ -32,6 +36,59 @@ const JOB_SELECT = `
   SELECT j.*, c.name AS company_name
   FROM jobs j
   JOIN companies c ON c.user_id = j.company_id
+`;
+
+/**
+ * SELECT base de publicações do feed, já resolvendo:
+ *  - autor (nome e papel) a partir de `users`;
+ *  - `author_headline`: título do candidato ou nome da empresa, quando houver;
+ *  - `liked_by`: array com os IDs de quem curtiu (para a UI marcar a curtida);
+ *  - `comments`: JSON com os comentários ordenados do mais antigo ao mais novo.
+ * O WHERE/ORDER é anexado por quem usa (ex.: filtrar por id ou ordenar o feed).
+ */
+const POST_SELECT = `
+  SELECT
+    p.id,
+    p.author_id,
+    u.name AS author_name,
+    u.role::text AS author_role,
+    COALESCE(cp.headline, co.name) AS author_headline,
+    p.content,
+    p.created_at,
+    COALESCE(
+      (SELECT array_agg(pl.user_id::text) FROM post_likes pl WHERE pl.post_id = p.id),
+      '{}'
+    ) AS liked_by,
+    COALESCE(
+      (
+        SELECT json_agg(
+                 json_build_object(
+                   'id', pc.id,
+                   'author_id', pc.author_id,
+                   'author_name', cu.name,
+                   'content', pc.content,
+                   'created_at', pc.created_at
+                 )
+                 ORDER BY pc.created_at
+               )
+        FROM post_comments pc
+        JOIN users cu ON cu.id = pc.author_id
+        WHERE pc.post_id = p.id
+      ),
+      '[]'::json
+    ) AS comments
+  FROM posts p
+  JOIN users u ON u.id = p.author_id
+  LEFT JOIN candidate_profiles cp ON cp.user_id = p.author_id
+  LEFT JOIN companies co ON co.user_id = p.author_id
+`;
+
+/** SELECT base de campanhas, resolvendo o nome da empresa autora. */
+const CAMPAIGN_SELECT = `
+  SELECT ca.*, COALESCE(co.name, u.name) AS company_name
+  FROM campaigns ca
+  JOIN users u ON u.id = ca.company_id
+  LEFT JOIN companies co ON co.user_id = ca.company_id
 `;
 
 export function createApp(): Express {
@@ -400,6 +457,198 @@ export function createApp(): Express {
     ok(res, toProfile(row as ProfileRow));
   });
 
+  // --------------------------- Feed de publicações ------------------------
+
+  /** Lista o feed, das publicações mais recentes para as mais antigas. */
+  app.get("/posts", async (_req, res) => {
+    const rows = await query<PostRow>(
+      `${POST_SELECT} ORDER BY p.created_at DESC`,
+    );
+    ok(res, rows.map(toPost));
+  });
+
+  /** Cria uma publicação. Retorna o post já agregado (curtidas/comentários). */
+  app.post("/posts", async (req: Request, res: Response) => {
+    const { authorId, content } = req.body ?? {};
+    const text = String(content ?? "").trim();
+    if (!authorId || !text) {
+      return fail(res, 400, "INVALID_INPUT", "Conteúdo da publicação vazio.");
+    }
+    const inserted = await queryOne<{ id: string }>(
+      "INSERT INTO posts (author_id, content) VALUES ($1, $2) RETURNING id",
+      [authorId, text],
+    );
+    const row = await queryOne<PostRow>(
+      `${POST_SELECT} WHERE p.id = $1`,
+      [inserted?.id],
+    );
+    if (!row) return fail(res, 500, "INTERNAL", "Falha ao criar publicação.");
+    ok(res, toPost(row));
+  });
+
+  /** Alterna a curtida de uma publicação para um usuário (idempotente). */
+  app.post("/posts/:id/like", async (req: Request, res: Response) => {
+    const { userId } = req.body ?? {};
+    if (!userId) return fail(res, 400, "INVALID_INPUT", "Usuário ausente.");
+
+    const existing = await queryOne(
+      "SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2",
+      [req.params.id, userId],
+    );
+    if (existing) {
+      await query("DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2", [
+        req.params.id,
+        userId,
+      ]);
+    } else {
+      await query(
+        "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [req.params.id, userId],
+      );
+    }
+    const row = await queryOne<PostRow>(`${POST_SELECT} WHERE p.id = $1`, [
+      req.params.id,
+    ]);
+    if (!row) return fail(res, 404, "NOT_FOUND", "Publicação não encontrada.");
+    ok(res, toPost(row));
+  });
+
+  /** Adiciona um comentário a uma publicação. */
+  app.post("/posts/:id/comments", async (req: Request, res: Response) => {
+    const { authorId, content } = req.body ?? {};
+    const text = String(content ?? "").trim();
+    if (!authorId || !text) {
+      return fail(res, 400, "INVALID_INPUT", "Comentário vazio.");
+    }
+    const post = await queryOne("SELECT 1 FROM posts WHERE id = $1", [
+      req.params.id,
+    ]);
+    if (!post) return fail(res, 404, "NOT_FOUND", "Publicação não encontrada.");
+
+    await query(
+      "INSERT INTO post_comments (post_id, author_id, content) VALUES ($1, $2, $3)",
+      [req.params.id, authorId, text],
+    );
+    const row = await queryOne<PostRow>(`${POST_SELECT} WHERE p.id = $1`, [
+      req.params.id,
+    ]);
+    ok(res, toPost(row as PostRow));
+  });
+
+  /** Remove uma publicação (apenas o próprio autor). */
+  app.delete("/posts/:id", async (req: Request, res: Response) => {
+    const authorId = req.query.userId ?? req.body?.userId;
+    if (authorId) {
+      await query("DELETE FROM posts WHERE id = $1 AND author_id = $2", [
+        req.params.id,
+        authorId,
+      ]);
+    } else {
+      await query("DELETE FROM posts WHERE id = $1", [req.params.id]);
+    }
+    res.status(204).end();
+  });
+
+  // ------------------- Campanhas / ações das empresas ---------------------
+
+  /** Vitrine pública: apenas campanhas APPROVED, mais recentes primeiro. */
+  app.get("/campaigns", async (_req, res) => {
+    const rows = await query<CampaignRow>(
+      `${CAMPAIGN_SELECT} WHERE ca.status = 'APPROVED'
+       ORDER BY COALESCE(ca.published_at, ca.created_at) DESC`,
+    );
+    ok(res, rows.map(toCampaign));
+  });
+
+  /** Campanhas de uma empresa (qualquer status), mais recentes primeiro. */
+  app.get("/companies/:companyId/campaigns", async (req, res) => {
+    const rows = await query<CampaignRow>(
+      `${CAMPAIGN_SELECT} WHERE ca.company_id = $1 ORDER BY ca.created_at DESC`,
+      [req.params.companyId],
+    );
+    ok(res, rows.map(toCampaign));
+  });
+
+  /** A empresa cria uma campanha; nasce em moderação (PENDING). */
+  app.post("/campaigns", async (req: Request, res: Response) => {
+    const c = req.body ?? {};
+    if (!c.companyId || !c.title || !c.description) {
+      return fail(res, 400, "INVALID_INPUT", "Dados da campanha incompletos.");
+    }
+    const inserted = await queryOne<{ id: string }>(
+      `INSERT INTO campaigns (company_id, title, subtitle, description, call_to_action, link, tag, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING') RETURNING id`,
+      [
+        c.companyId, c.title, c.subtitle ?? "", c.description,
+        c.callToAction ?? "", c.link ?? null, c.tag ?? "",
+      ],
+    );
+    const row = await queryOne<CampaignRow>(
+      `${CAMPAIGN_SELECT} WHERE ca.id = $1`,
+      [inserted?.id],
+    );
+    if (!row) return fail(res, 500, "INTERNAL", "Falha ao criar campanha.");
+    ok(res, toCampaign(row));
+  });
+
+  /** A empresa remove a própria campanha. */
+  app.delete("/campaigns/:id", async (req: Request, res: Response) => {
+    const companyId = req.query.companyId ?? req.body?.companyId;
+    if (companyId) {
+      await query("DELETE FROM campaigns WHERE id = $1 AND company_id = $2", [
+        req.params.id,
+        companyId,
+      ]);
+    } else {
+      await query("DELETE FROM campaigns WHERE id = $1", [req.params.id]);
+    }
+    res.status(204).end();
+  });
+
+  /** Moderação (ADMIN): aprovar publica a campanha; rejeitar registra o motivo. */
+  app.patch(
+    "/admin/campaigns/:id/review",
+    requireRole("ADMIN"),
+    async (req: Request, res: Response) => {
+      const { action, reason, adminId, adminName } = req.body ?? {};
+      const approve = action === "approve";
+      const row = await withTransaction(async (tx) => {
+        const updated = await tx.queryOne<CampaignRow>(
+          `WITH updated AS (
+             UPDATE campaigns SET
+               status = $2::campaign_status,
+               review_reason = $3,
+               published_at = CASE WHEN $4 THEN now() ELSE NULL END
+             WHERE id = $1 RETURNING *
+           )
+           SELECT up.*, COALESCE(co.name, u.name) AS company_name
+           FROM updated up
+           JOIN users u ON u.id = up.company_id
+           LEFT JOIN companies co ON co.user_id = up.company_id`,
+          [
+            req.params.id,
+            approve ? "APPROVED" : "REJECTED",
+            approve ? null : (reason ?? null),
+            approve,
+          ],
+        );
+        if (!updated) return null;
+        await audit(
+          adminId, adminName, "CAMPAIGN", updated.id, updated.title,
+          approve ? "APPROVE" : "REJECT", reason, tx,
+        );
+        await notify(updated.company_id, "MODERATION", {
+          message: approve
+            ? `Sua campanha "${updated.title}" foi aprovada e publicada.`
+            : `Sua campanha "${updated.title}" foi recusada. Motivo: ${reason ?? "-"}`,
+        }, tx);
+        return updated;
+      });
+      if (!row) return fail(res, 404, "NOT_FOUND", "Campanha não encontrada.");
+      ok(res, toCampaign(row));
+    },
+  );
+
   // ------------------------------- Denúncias ------------------------------
 
   app.post("/reports", async (req: Request, res: Response) => {
@@ -433,15 +682,17 @@ export function createApp(): Express {
   // ------------------------- Moderação / Admin ----------------------------
 
   app.get("/admin/moderation/queue", requireRole("ADMIN"), async (_req, res) => {
-    const [jobs, companies, reports] = await Promise.all([
+    const [jobs, companies, reports, campaigns] = await Promise.all([
       query<JobRow>(`${JOB_SELECT} WHERE j.status = 'PENDING' ORDER BY j.created_at`),
       query("SELECT * FROM companies WHERE verification_status = 'PENDING'"),
       query("SELECT * FROM reports WHERE status = 'PENDING' ORDER BY created_at DESC"),
+      query<CampaignRow>(`${CAMPAIGN_SELECT} WHERE ca.status = 'PENDING' ORDER BY ca.created_at`),
     ]);
     ok(res, {
       jobs: jobs.map(toJob),
       companies: companies.map((c) => toCompany(c as never)),
       reports: reports.map((r) => toReport(r as never)),
+      campaigns: campaigns.map(toCampaign),
     });
   });
 

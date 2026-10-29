@@ -14,11 +14,12 @@
 }
 
 .stat {
-  background: var(--color-surface);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  border-radius: var(--radius); /* ~8px, como os cards do LinkedIn */
+  padding: var(--space-4) var(--space-6);
   text-align: center;
+  box-shadow: var(--shadow-card);
 }
 
 .stat__num {
